@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viandas Leno – Gestión</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{--bg:#0e1118;--sur:#171b26;--sur2:#1d2133;--bor:#252b3d;--acc:#f5a623;--red:#e8504a;--grn:#2ed17e;--blu:#4a8fe8;--txt:#e8eaf2;--mut:#5e6680;--r:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 30% 20%,#181028 0%,#0e1118 65%)}
+.lcard{background:var(--sur);border:1px solid var(--bor);border-radius:20px;padding:52px 44px;width:390px;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:up .45s ease}
+@keyframes up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+.llogo{text-align:center;margin-bottom:36px}
+.llogo .brand{font-size:2.1rem;font-weight:800;color:var(--acc);letter-spacing:-1px}
+.llogo .sub{font-size:.75rem;color:var(--mut);margin-top:5px;text-transform:uppercase;letter-spacing:2.5px}
+.lform label{display:block;font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:22px}
+.lform input{width:100%;padding:12px 16px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:.9rem;outline:none;transition:border-color .2s}
+.lform input:focus{border-color:var(--acc)}
+.btnLogin{width:100%;margin-top:30px;padding:14px;background:var(--acc);color:#0e1118;border:none;border-radius:8px;font-family:'Sora',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;transition:opacity .2s,transform .1s}
+.btnLogin:hover{opacity:.88;transform:translateY(-1px)}
+.lerr{margin-top:10px;color:var(--red);font-size:.78rem;text-align:center;display:none}
+#app{display:none}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100}
+.hbrand{font-size:1.25rem;font-weight:800;color:var(--acc);letter-spacing:-.5px}
+.hbrand span{color:var(--txt)}
+.hright{display:flex;align-items:center;gap:14px}
+.btnOut{padding:7px 16px;background:transparent;border:1px solid var(--bor);border-radius:8px;color:var(--mut);font-family:'Sora',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s}
+.btnOut:hover{border-color:var(--red);color:var(--red)}
+.tabs{display:flex;gap:2px;padding:14px 28px 0;border-bottom:1px solid var(--bor);background:var(--sur);overflow-x:auto}
+.tab{padding:10px 18px;background:transparent;border:none;border-bottom:3px solid transparent;color:var(--mut);font-family:'Sora',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab:hover{color:var(--txt)}
+.tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+.main{padding:26px;max-width:1400px;margin:0 auto}
+.page{display:none}
+.page.active{display:block;animation:fd .28s ease}
+@keyframes fd{from{opacity:0}to{opacity:1}}
+.stitle{font-size:1.35rem;font-weight:700;margin-bottom:20px}
+.stitle span{color:var(--acc)}
+.sucGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:12px;margin-bottom:24px}
+.sucCard{background:var(--sur);border:2px solid var(--bor);border-radius:var(--r);padding:15px 18px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.sucCard:hover{border-color:var(--acc);transform:translateY(-2px)}
+.sucCard.sel{border-color:var(--acc);background:rgba(245,166,35,.07)}
+.sucEmoji{font-size:1.7rem}
+.sucName{font-weight:600;font-size:.9rem}
+.sucCount{font-size:.72rem;color:var(--mut);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.regPanel{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:22px}
+.regHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.selLabel{font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px}
+.dateRow{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.dateRow label{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.8px}
+.dateRow input[type=date]{padding:8px 12px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:.82rem;outline:none}
+.dateRow input[type=date]:focus{border-color:var(--acc)}
+.menuDiaBox{background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:13px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.mdLabel{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.menuDiaNombre{font-weight:600;color:var(--acc);font-size:.9rem}
+.vGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+.vBtn{background:var(--sur2);border:1px solid var(--bor);border-radius:var(--r);padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
+.vBtn:hover{border-color:rgba(245,166,35,.4)}
+.vName{font-size:.78rem;font-weight:600;text-align:center;color:var(--txt);line-height:1.3}
+.vCount{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--acc)}
+.vCtrl{display:flex;gap:6px;align-items:center;margin-top:2px}
+.vm,.vp{width:30px;height:30px;border-radius:7px;border:none;cursor:pointer;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.vm{background:rgba(232,80,74,.15);color:var(--red)}.vm:hover{background:rgba(232,80,74,.3)}
+.vp{background:rgba(46,209,126,.15);color:var(--grn)}.vp:hover{background:rgba(46,209,126,.3)}
+.vdx{position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;font-size:.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700}
+.vBtn.dm{border-color:rgba(232,80,74,.35)}
+.vBtn.dm:hover{background:rgba(232,80,74,.07)}
+.addRow{display:flex;gap:8px;margin-top:18px;padding-top:18px;border-top:1px solid var(--bor)}
+.addRow input{flex:1;padding:9px 13px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;color:var(--txt);font-family:'Sora',sans-serif;font-size:.85rem;outline:none}
+.addRow input:focus{border-color:var(--acc)}
+.btnA{padding:9px 18px;background:var(--acc);color:#0e1118;border:none;border-radius:8px;font-family:'Sora',sans-serif;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.btnA:hover{opacity:.85}
+.btnS{padding:9px 18px;background:transparent;border:1px solid var(--bor);color:var(--mut);border-radius:8px;font-family:'Sora',sans-serif;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.btnS:hover{border-color:var(--red);color:var(--red)}
+.btnD{padding:9px 18px;background:transparent;border:1px solid var(--bor);color:var(--mut);border-radius:8px;font-family:'Sora',sans-serif;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.btnD.on{border-color:var(--red);color:var(--red);background:rgba(232,80,74,.07)}
+.btnB{padding:9px 18px;background:var(--blu);color:#fff;border:none;border-radius:8px;font-family:'Sora',sans-serif;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.btnB:hover{opacity:.85}
+.btnG{padding:9px 18px;background:var(--grn);color:#0e1118;border:none;border-radius:8px;font-family:'Sora',sans-serif;font-weight:600;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.btnG:hover{opacity:.85}
+.tip{font-size:.73rem;color:var(--mut);background:var(--sur2);border-radius:8px;padding:9px 13px;margin-top:14px;border-left:3px solid var(--acc)}
+.empPanel{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:20px;margin-top:14px}
+.empPanel h3{font-size:.9rem;font-weight:700;margin-bottom:14px;color:var(--acc)}
+.empGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:8px}
+.empCard{background:var(--sur2);border:1px solid var(--bor);border-radius:9px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.eName{font-size:.8rem;font-weight:600;flex:1}
+.empTog{width:28px;height:28px;border-radius:6px;border:1.5px solid var(--bor);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .15s;flex-shrink:0}
+.empTog.on{border-color:var(--grn);background:rgba(46,209,126,.15);color:var(--grn)}
+.empTog.off{color:var(--mut)}
+.rCtrl{display:flex;gap:12px;margin-bottom:22px;align-items:flex-end;flex-wrap:wrap}
+.rCtrl>div{display:flex;flex-direction:column;gap:4px}
+.rCtrl label{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.7px}
+.rCtrl select,.rCtrl input[type=date],.rCtrl input[type=month]{padding:9px 13px;background:var(--sur);border:1px solid var(--bor);border-radius:8px;color:var(--txt);font-family:'Sora',sans-serif;font-size:.82rem;outline:none}
+.rCtrl select:focus,.rCtrl input:focus{border-color:var(--acc)}
+.rCtrl .btns{display:flex;gap:8px;align-self:flex-end}
+.tblWrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--bor)}
+.tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.tbl th{background:var(--sur2);padding:11px 15px;text-align:left;font-weight:600;color:var(--mut);text-transform:uppercase;font-size:.68rem;letter-spacing:.7px;border-bottom:1px solid var(--bor)}
+.tbl td{padding:10px 15px;border-bottom:1px solid rgba(37,43,61,.6);color:var(--txt)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(245,166,35,.03)}
+.tbl .tot td{font-weight:700;color:var(--acc);border-top:1px solid var(--bor);border-bottom:none}
+.bO{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:600;font-family:'JetBrains Mono',monospace;background:rgba(245,166,35,.14);color:var(--acc)}
+.bG{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:600;font-family:'JetBrains Mono',monospace;background:rgba(46,209,126,.14);color:var(--grn)}
+.bB{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:600;font-family:'JetBrains Mono',monospace;background:rgba(74,143,232,.14);color:var(--blu)}
+.sumCards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:22px}
+.sCard{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:16px 18px}
+.sCard .sl{font-size:.68rem;color:var(--mut);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+.sCard .sv{font-size:1.9rem;font-weight:800;color:var(--acc);font-family:'JetBrains Mono',monospace}
+.sCard .ss{font-size:.7rem;color:var(--mut);margin-top:3px}
+.empty{text-align:center;padding:44px;color:var(--mut);font-size:.88rem}
+.cfgBox{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:22px;margin-bottom:18px;max-width:580px}
+.cfgBox h3{font-weight:700;margin-bottom:14px}
+.cfgBox p{font-size:.82rem;color:var(--mut);line-height:1.65}
+.cfgIn{width:100%;padding:10px 13px;background:var(--sur2);border:1px solid var(--bor);border-radius:8px;color:var(--txt);font-family:'Sora',sans-serif;font-size:.85rem;outline:none;margin-bottom:10px}
+.cfgIn:focus{border-color:var(--acc)}
+.cfgRow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bor);font-size:.85rem}
+.cfgRow:last-child{border-bottom:none}
+@media(max-width:700px){
+  .main{padding:14px}.tabs{padding:10px 14px 0}.hdr{padding:10px 14px}
+  .lcard{width:94vw;padding:36px 22px}
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="lcard">
+    <div class="llogo">
+      <div class="brand">🍱 Viandas Leno</div>
+      <div class="sub">Sistema de Gestión</div>
+    </div>
+    <div class="lform">
+      <label>Usuario</label>
+      <input type="text" id="lusr" placeholder="usuario" autocomplete="username">
+      <label>Contraseña</label>
+      <input type="password" id="lpas" placeholder="contraseña" autocomplete="current-password">
+      <button class="btnLogin" onclick="doLogin()">Ingresar</button>
+      <div class="lerr" id="lerr">⚠ Usuario o contraseña incorrectos</div>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="hdr">
+    <div class="hbrand">🍱 Viandas <span>Leno</span></div>
+    <div class="hright">
+      <span style="font-size:.78rem;color:var(--mut)">Hola, <strong style="color:var(--txt)">Admin</strong></span>
+      <button class="btnOut" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('registro',this)">📋 Registro</button>
+    <button class="tab" onclick="showPage('empleados',this)">👥 Personal</button>
+    <button class="tab" onclick="showPage('menus',this)">📅 Menú Semanal</button>
+    <button class="tab" onclick="showPage('diario',this)">📊 Informe Diario</button>
+    <button class="tab" onclick="showPage('mensual',this)">📆 Informe Mensual</button>
+    <button class="tab" onclick="showPage('config',this)">⚙ Config</button>
+  </div>
+  <div class="main">
+
+    <!-- REGISTRO -->
+    <div id="page-registro" class="page active">
+      <div class="stitle">Registro <span>Diario de Viandas</span></div>
+      <div class="dateRow">
+        <label>Fecha:</label>
+        <input type="date" id="regDate" onchange="onDateChange()">
+      </div>
+      <div class="sucGrid" id="sucGrid"></div>
+      <div id="regPanel" style="display:none">
+        <div class="regPanel">
+          <div class="regHeader">
+            <div class="selLabel" id="selLabel">—</div>
+            <button class="btnD" id="delModeBtn" onclick="toggleDelMode()">✏ Editar menú</button>
+          </div>
+          <div class="menuDiaBox">
+            <span class="mdLabel">Menú del día:</span>
+            <div id="menuDiaNombre" class="menuDiaNombre">—</div>
+          </div>
+          <div class="vGrid" id="vGrid"></div>
+          <div class="addRow" id="addRow" style="display:none">
+            <input type="text" id="newVname" placeholder="Nueva vianda o complemento..." maxlength="60">
+            <button class="btnA" onclick="addVianda()">+ Agregar</button>
+            <button class="btnS" onclick="toggleDelMode()">Cancelar</button>
+          </div>
+          <div class="tip" id="tipBox">💡 Usá <strong>+</strong> y <strong>−</strong> para registrar unidades enviadas. Los datos se guardan automáticamente.</div>
+        </div>
+        <div class="empPanel">
+          <h3>👤 Personal que recibe vianda hoy</h3>
+          <div class="empGrid" id="empDayGrid"></div>
+          <div class="tip" style="margin-top:12px">Tildá cada empleado que recibió su vianda. Se refleja en los informes.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSONAL -->
+    <div id="page-empleados" class="page">
+      <div class="stitle">Gestión de <span>Personal</span></div>
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="empNom" class="cfgIn" placeholder="Nombre del empleado" style="max-width:260px;margin:0">
+        <select id="empSuc" style="padding:9px 13px;background:var(--sur);border:1px solid var(--bor);border-radius:8px;color:var(--txt);font-family:'Sora',sans-serif;font-size:.82rem;outline:none"></select>
+        <button class="btnA" onclick="addEmpleado()">+ Agregar</button>
+      </div>
+      <div id="empLista"></div>
+    </div>
+
+    <!-- MENÚ SEMANAL -->
+    <div id="page-menus" class="page">
+      <div class="stitle">Planificación <span>Semanal de Menús</span></div>
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
+        <div>
+          <label style="font-size:.72rem;color:var(--mut);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.7px">Semana (cualquier día)</label>
+          <input type="date" id="semFecha" style="padding:9px 13px;background:var(--sur);border:1px solid var(--bor);border-radius:8px;color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:.82rem;outline:none">
+        </div>
+        <button class="btnA" onclick="addSemana()">+ Nueva semana</button>
+      </div>
+      <div id="menuSemGrid"></div>
+    </div>
+
+    <!-- INFORME DIARIO -->
+    <div id="page-diario" class="page">
+      <div class="stitle">Informe <span>Diario</span></div>
+      <div class="rCtrl">
+        <div><label>Fecha</label><input type="date" id="rDDate"></div>
+        <div><label>Sucursal</label><select id="rDSuc"><option value="">Todas</option></select></div>
+        <div class="btns"><button class="btnB" onclick="renderDiario()">🔍 Ver</button><button class="btnG" onclick="exportDiario()">⬇ Excel</button></div>
+      </div>
+      <div id="diarioContent"><div class="empty">Seleccioná una fecha y presioná Ver</div></div>
+    </div>
+
+    <!-- INFORME MENSUAL -->
+    <div id="page-mensual" class="page">
+      <div class="stitle">Informe <span>Mensual</span></div>
+      <div class="rCtrl">
+        <div><label>Mes</label><input type="month" id="rMMonth"></div>
+        <div><label>Sucursal</label><select id="rMSuc"><option value="">Todas</option></select></div>
+        <div class="btns"><button class="btnB" onclick="renderMensual()">🔍 Ver</button><button class="btnG" onclick="exportMensual()">⬇ Excel</button></div>
+      </div>
+      <div id="mensualContent"><div class="empty">Seleccioná un mes y presioná Ver</div></div>
+    </div>
+
+    <!-- CONFIG -->
+    <div id="page-config" class="page">
+      <div class="stitle">⚙ <span>Configuración</span></div>
+      <div class="cfgBox">
+        <h3>Sucursales</h3>
+        <div id="cfgSucList"></div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+          <input class="cfgIn" id="newSucNom" placeholder="Nombre" style="flex:1;min-width:130px;margin:0">
+          <input class="cfgIn" id="newSucEmo" placeholder="🍴" style="width:64px;margin:0;text-align:center">
+          <button class="btnA" onclick="addSucursal()">+ Agregar</button>
+        </div>
+      </div>
+      <div class="cfgBox">
+        <h3>Cambiar contraseña</h3>
+        <input type="password" class="cfgIn" id="newPass" placeholder="Nueva contraseña">
+        <button class="btnA" onclick="changePass()" style="width:100%">Guardar</button>
+      </div>
+      <div class="cfgBox">
+        <h3>Sobre los datos</h3>
+        <p>Los datos se guardan en el navegador (localStorage). Persisten mientras no se limpie la caché. Para uso compartido en múltiples dispositivos se recomienda una solución con base de datos en servidor.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const KEY='viandasLenoV3';
+
+const D_SUC=[
+  {id:'acq', nombre:'Aconquija',      emoji:'🍔'},
+  {id:'bn',  nombre:'Barrio Norte',   emoji:'🍔'},
+  {id:'tv',  nombre:'Tafi Viejo',     emoji:'🍔'},
+  {id:'adm', nombre:'Administración', emoji:'🏢'},
+  {id:'piz', nombre:'Pizzería',       emoji:'🍕'},
+  {id:'cdp', nombre:'CDP',            emoji:'🏠'},
+];
+
+const D_EMP=[
+  // Aconquija
+  {id:'e1', nombre:'Alexia Jimenez',            sucId:'acq'},
+  {id:'e2', nombre:'Carlos Eduardo Argañaraz',  sucId:'acq'},
+  {id:'e3', nombre:'Matías Gabriel Vilca',      sucId:'acq'},
+  {id:'e4', nombre:'Diaz Alexis Maximiliano',   sucId:'acq'},
+  {id:'e5', nombre:'Gramajo Martín Ignacio',    sucId:'acq'},
+  {id:'e6', nombre:'Martina Gonzalez',          sucId:'acq'},
+  {id:'e7', nombre:'Belen Correa',              sucId:'acq'},
+  {id:'e8', nombre:'Brenda Raniero',            sucId:'acq'},
+  {id:'e9', nombre:'Facundo Toledo',            sucId:'acq'},
+  {id:'e10',nombre:'Camila Coronel',            sucId:'acq'},
+  {id:'e11',nombre:'Marha Juarez',              sucId:'acq'},
+  // Barrio Norte
+  {id:'e12',nombre:'Pilar Gimenez',             sucId:'bn'},
+  {id:'e13',nombre:'Celeste Herrera',           sucId:'bn'},
+  {id:'e14',nombre:'Nahuel Juarez',             sucId:'bn'},
+  {id:'e15',nombre:'Martina Maria Gonzalez',    sucId:'bn'},
+  {id:'e16',nombre:'Tamara Rocio Rearte',       sucId:'bn'},
+  {id:'e17',nombre:'Alvaro Gonzalez',           sucId:'bn'},
+  {id:'e18',nombre:'Lucas Cañete',              sucId:'bn'},
+  // Tafi Viejo
+  {id:'e19',nombre:'Agostina Priscila Gonzalez',sucId:'tv'},
+  {id:'e20',nombre:'Damian Medina',             sucId:'tv'},
+  {id:'e21',nombre:'Leguizamon Héctor',         sucId:'tv'},
+  {id:'e22',nombre:'Lucas Solaiman',            sucId:'tv'},
+  {id:'e23',nombre:'Noelia Deiana',             sucId:'tv'},
+  {id:'e24',nombre:'Ulixes Diaz',               sucId:'tv'},
+  {id:'e25',nombre:'Jose Leal Toscano',         sucId:'tv'},
+  {id:'e26',nombre:'Matias Vilca',              sucId:'tv'},
+  {id:'e27',nombre:'Lucia Quintana',            sucId:'tv'},
+  // Administración
+  {id:'e28',nombre:'Luis Ybarra',               sucId:'adm'},
+  {id:'e29',nombre:'Julio Monteros',            sucId:'adm'},
+  {id:'e30',nombre:'Zulema Roldan',             sucId:'adm'},
+  {id:'e31',nombre:'Matias Caseres',            sucId:'adm'},
+  {id:'e32',nombre:'Paula Ferraro',             sucId:'adm'},
+  // Pizzería
+  {id:'e33',nombre:'Julian Ramon',              sucId:'piz'},
+  {id:'e34',nombre:'Martin Gauna',              sucId:'piz'},
+  {id:'e35',nombre:'Marcelo Abregu',            sucId:'piz'},
+  {id:'e36',nombre:'Lucas Cañete (Piz)',        sucId:'piz'},
+  {id:'e37',nombre:'Belen Correa (Piz)',        sucId:'piz'},
+  // CDP
+  {id:'e38',nombre:'Rocio Camacho',             sucId:'cdp'},
+  {id:'e39',nombre:'Nahuel Quiros',             sucId:'cdp'},
+  {id:'e40',nombre:'Alvaro Cassara',            sucId:'cdp'},
+  {id:'e41',nombre:'Maximiliano Ramirez',       sucId:'cdp'},
+  {id:'e42',nombre:'Mauro Conde',               sucId:'cdp'},
+  {id:'e43',nombre:'Juan Avalos',               sucId:'cdp'},
+];
+
+const D_VIANDAS=[
+  'Milanesa de carne c/ puré','Milanesa de pollo c/ puré',
+  'Medallon de pollo c/ arroz','Pata muslo c/ arroz',
+  'Costeleta c/ puré','Suprema c/ papas',
+  'Bife de pollo c/ papas','Fideos c/ salsa boloñesa',
+  'Arroz con pollo','Kipe c/ arroz','Albóndigas c/ arroz',
+  'Tarta de pollo','Wok de pollo c/ fideos',
+  'Pastel de papas','Hamburguesas c/ puré',
+  'Canelones de pollo','Pollo a la crema c/ puré',
+  // Veggie
+  'Medallon de zanahoria c/ puré','Milanesa de berenjena c/ puré',
+  'Milanesa de soja c/ ensalada','Wok de verduras',
+  'Tarta de verduras','Bocadito de espinaca c/ arroz',
+  'Coreanito gratinado c/ ensalada','Zapallito relleno c/ arroz',
+];
+
+const D_SEMANAS=[
+  {inicio:'2025-12-29',dias:['Milanesa de carne c/ puré','Pata muslo c/ arroz',null,'Suprema c/ papas','Costeleta c/ fideos','Bife de pollo c/ papas','Medallon de pollo c/ ensalada']},
+  {inicio:'2026-01-05',dias:['Costeleta c/ puré','Fideos c/ salsa boloñesa','Arroz con pollo','Mila napo c/ papas','Pata muslo c/ arroz','Suprema napo c/ papas','Bife de pollo c/ ensalada']},
+  {inicio:'2026-01-12',dias:['Medallon de pollo c/ arroz','Mila de carne c/ arroz','Fideos c/ salsa de pollo','Costeleta c/ papas','Suprema c/ fideos','Pata muslo c/ ensalada','Albóndigas c/ arroz']},
+  {inicio:'2026-01-19',dias:['Arroz con pollo','Albóndigas c/ ensalada','Napolitana c/ puré','Medallon de pollo c/ ensalada','Pata muslo c/ fideos','Costeleta c/ arroz','Albóndigas de pollo c/ ensalada']},
+  {inicio:'2026-01-26',dias:['Milanesa de pollo c/ arroz','Milanesa de carne c/ ensalada','Tarta de pollo c/ ensalada','Fideos c/ salsa de pollo','Costeleta c/ puré','Pata muslo c/ ensalada','Wok de pollo c/ arroz']},
+  {inicio:'2026-02-02',dias:['Kipe c/ arroz','Napolitana c/ puré','Fideos c/ salsa boloñesa','Albóndigas c/ ensalada','Wok de pollo','Medallon de pollo c/ fideo','Bife de carne c/ ensalada']},
+  {inicio:'2026-02-09',dias:['Taco pollo','Pastel de papas','Albóndiga a la criolla c/ arroz','Milanesa c/ papa al horno','Tarta de pollo','Wok de fideos c/ pollo','Kipe c/ ensalada']},
+  {inicio:'2026-02-16',dias:[null,null,'Napo c/ ensalada','Fideo c/ salsa de pollo','Hamburguesas c/ puré','Tarta de pollo c/ ensalada','Albóndigas c/ arroz']},
+  {inicio:'2026-02-23',dias:['Wok de pollo c/ fideos','Mila de carne c/ papa al horno','Pastel de papas','Albóndigas c/ ensalada','Fideos c/ salsa de pollo','Hamburguesas c/ papas','Pollo a la crema c/ puré']},
+  {inicio:'2026-03-02',dias:['Kipe c/ ensalada de papa','Canelones de pollo','Napolitana c/ ensalada','Albóndiga c/ arroz','Tarta de pollo c/ ensalada','Fideos c/ salsa boloñesa','Hamburguesas gratinadas c/ puré']},
+  {inicio:'2026-03-09',dias:['Kipe c/ ensalada papa','Albóndigas c/ arroz','Tarta de pollo y puerro','Milanesa c/ fideo','Pollo a la crema c/ puré','Pastel de papa','Wok de fideos c/ verdura']},
+];
+
+// STORAGE
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
+  return{sucursales:D_SUC,empleados:D_EMP,viandas:D_VIANDAS,semanas:D_SEMANAS,registros:{},asistencia:{},creds:{user:'admin',pass:'leno2799'}};
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(DB));}
+let DB=load();
+
+// AUTH
+function doLogin(){
+  const u=document.getElementById('lusr').value.trim(),p=document.getElementById('lpas').value;
+  if(u===DB.creds.user&&p===DB.creds.pass){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  }else document.getElementById('lerr').style.display='block';
+}
+document.getElementById('lpas').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+document.getElementById('lusr').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+function doLogout(){document.getElementById('app').style.display='none';document.getElementById('loginScreen').style.display='flex';document.getElementById('lusr').value='';document.getElementById('lpas').value='';}
+function changePass(){const np=document.getElementById('newPass').value;if(!np)return alert('Ingresá contraseña');DB.creds.pass=np;save();alert('✅ Guardado');document.getElementById('newPass').value='';}
+
+// NAV
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='empleados')renderEmpPage();
+  if(id==='menus')renderMenuSem();
+  if(id==='config')renderCfg();
+}
+
+// INIT
+let selSuc=null,delMode=false;
+function initApp(){
+  const t=todayStr();
+  document.getElementById('regDate').value=t;
+  document.getElementById('rDDate').value=t;
+  document.getElementById('rMMonth').value=t.slice(0,7);
+  document.getElementById('semFecha').value=getLunes(t);
+  renderSucGrid();populateSels();
+}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function getLunes(d){const dt=new Date(d+'T00:00:00'),dw=dt.getDay(),df=dw===0?-6:1-dw;dt.setDate(dt.getDate()+df);return dt.toISOString().slice(0,10);}
+function fmtDate(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
+
+// SUCURSALES
+function renderSucGrid(){
+  const g=document.getElementById('sucGrid'),f=document.getElementById('regDate').value;
+  g.innerHTML='';
+  DB.sucursales.forEach(s=>{
+    const tot=getTotSuc(s.id,f),el=document.createElement('div');
+    el.className='sucCard'+(selSuc===s.id?' sel':'');
+    el.innerHTML=`<div class="sucEmoji">${s.emoji}</div><div><div class="sucName">${s.nombre}</div><div class="sucCount">${tot} und. hoy</div></div>`;
+    el.onclick=()=>selectSuc(s.id);
+    g.appendChild(el);
+  });
+}
+function getTotSuc(id,f){const d=DB.registros[f];if(!d||!d[id])return 0;return Object.values(d[id]).reduce((a,b)=>a+b,0);}
+function selectSuc(id){selSuc=id;delMode=false;document.getElementById('regPanel').style.display='block';renderSucGrid();renderVGrid();renderEmpDay();}
+function onDateChange(){renderSucGrid();if(selSuc){renderVGrid();renderEmpDay();}}
+
+// MENÚ DEL DÍA
+function getMenuDia(f){
+  if(!f)return null;
+  const d=new Date(f+'T00:00:00'),dw=d.getDay(),idx=dw===0?6:dw-1;
+  for(const s of DB.semanas){
+    const ini=new Date(s.inicio+'T00:00:00'),fin=new Date(ini);fin.setDate(fin.getDate()+6);
+    if(d>=ini&&d<=fin)return s.dias[idx]||null;
+  }
+  return null;
+}
+
+// VIANDAS
+function renderVGrid(){
+  const s=DB.sucursales.find(x=>x.id===selSuc);
+  document.getElementById('selLabel').innerHTML=`${s.emoji} <span>${s.nombre}</span>`;
+  document.getElementById('addRow').style.display=delMode?'flex':'none';
+  document.getElementById('tipBox').style.display=delMode?'none':'block';
+  const btn=document.getElementById('delModeBtn');
+  btn.className='btnD'+(delMode?' on':'');
+  btn.textContent=delMode?'✅ Listo':'✏ Editar menú';
+  const f=document.getElementById('regDate').value,sReg=(DB.registros[f]||{})[selSuc]||{};
+  const mh=getMenuDia(f),mn=document.getElementById('menuDiaNombre');
+  mn.textContent=mh||'(Sin planificación para este día)';
+  mn.style.color=mh?'var(--acc)':'var(--mut)';
+  const g=document.getElementById('vGrid');g.innerHTML='';
+  DB.viandas.forEach(name=>{
+    const count=sReg[name]||0,el=document.createElement('div');
+    el.className='vBtn'+(delMode?' dm':'');
+    if(delMode){
+      el.innerHTML=`<div class="vdx" onclick="delVianda(${JSON.stringify(name)})">×</div><div class="vName">${name}</div><div class="vCount">${count}</div>`;
+    }else{
+      el.innerHTML=`<div class="vName">${name}</div><div class="vCount">${count}</div><div class="vCtrl"><button class="vm" onclick="chgCount(${JSON.stringify(name)},-1)">−</button><button class="vp" onclick="chgCount(${JSON.stringify(name)},+1)">+</button></div>`;
+    }
+    g.appendChild(el);
+  });
+}
+function chgCount(name,delta){
+  const f=document.getElementById('regDate').value;
+  if(!DB.registros[f])DB.registros[f]={};
+  if(!DB.registros[f][selSuc])DB.registros[f][selSuc]={};
+  DB.registros[f][selSuc][name]=Math.max(0,(DB.registros[f][selSuc][name]||0)+delta);
+  save();renderVGrid();renderSucGrid();
+}
+function toggleDelMode(){delMode=!delMode;renderVGrid();}
+function addVianda(){const i=document.getElementById('newVname'),n=i.value.trim();if(!n)return;if(DB.viandas.includes(n))return alert('Ya existe');DB.viandas.push(n);save();i.value='';renderVGrid();}
+function delVianda(name){if(!confirm(`¿Eliminar "${name}"?`))return;DB.viandas=DB.viandas.filter(v=>v!==name);Object.values(DB.registros).forEach(d=>Object.values(d).forEach(s=>delete s[name]));save();renderVGrid();}
+document.getElementById('newVname').addEventListener('keydown',e=>{if(e.key==='Enter')addVianda()});
+
+// EMPLEADOS DEL DÍA
+function renderEmpDay(){
+  const f=document.getElementById('regDate').value,asist=DB.asistencia[f]||{},emps=DB.empleados.filter(e=>e.sucId===selSuc),g=document.getElementById('empDayGrid');
+  g.innerHTML='';
+  if(!emps.length){g.innerHTML='<div style="font-size:.8rem;color:var(--mut);padding:8px">Sin empleados en esta sucursal. Agregá desde 👥 Personal.</div>';return;}
+  emps.forEach(emp=>{
+    const on=!!asist[emp.id],el=document.createElement('div');
+    el.className='empCard';
+    el.innerHTML=`<div><div class="eName">${emp.nombre}</div></div><button class="empTog ${on?'on':'off'}" onclick="togAsist('${emp.id}','${f}')">${on?'✓':'○'}</button>`;
+    g.appendChild(el);
+  });
+}
+function togAsist(empId,f){if(!DB.asistencia[f])DB.asistencia[f]={};DB.asistencia[f][empId]=!DB.asistencia[f][empId];save();renderEmpDay();}
+
+// EMPLEADOS PAGE
+function renderEmpPage(){
+  const sel=document.getElementById('empSuc');
+  sel.innerHTML='';
+  DB.sucursales.forEach(s=>sel.innerHTML+=`<option value="${s.id}">${s.emoji} ${s.nombre}</option>`);
+  const el=document.getElementById('empLista');el.innerHTML='';
+  DB.sucursales.forEach(suc=>{
+    const emps=DB.empleados.filter(e=>e.sucId===suc.id);if(!emps.length)return;
+    const box=document.createElement('div');
+    box.style.cssText='background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:18px;margin-bottom:14px';
+    box.innerHTML=`<div style="font-weight:700;margin-bottom:12px;font-size:.9rem">${suc.emoji} ${suc.nombre} <span style="font-size:.72rem;color:var(--mut);margin-left:6px">${emps.length} empleados</span></div>`;
+    const g=document.createElement('div');g.className='empGrid';
+    emps.forEach(emp=>{
+      const ec=document.createElement('div');ec.className='empCard';
+      ec.innerHTML=`<div><div class="eName">${emp.nombre}</div></div><button class="btnS" style="padding:4px 10px;font-size:.72rem" onclick="delEmp('${emp.id}')">✕</button>`;
+      g.appendChild(ec);
+    });
+    box.appendChild(g);el.appendChild(box);
+  });
+}
+function addEmpleado(){
+  const nom=document.getElementById('empNom').value.trim(),sucId=document.getElementById('empSuc').value;
+  if(!nom)return alert('Ingresá el nombre');
+  DB.empleados.push({id:'e'+(Date.now()),nombre:nom,sucId});save();document.getElementById('empNom').value='';renderEmpPage();
+}
+function delEmp(id){if(!confirm('¿Eliminar empleado?'))return;DB.empleados=DB.empleados.filter(e=>e.id!==id);save();renderEmpPage();}
+
+// MENÚ SEMANAL
+function renderMenuSem(){
+  const el=document.getElementById('menuSemGrid');el.innerHTML='';
+  if(!DB.semanas.length){el.innerHTML='<div class="empty">Sin semanas. Agregá una.</div>';return;}
+  [...DB.semanas].sort((a,b)=>a.inicio.localeCompare(b.inicio)).forEach((sem,si)=>{
+    const ini=new Date(sem.inicio+'T00:00:00'),fin=new Date(ini);fin.setDate(fin.getDate()+6);
+    const row=document.createElement('div');
+    row.style.cssText='background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:18px;margin-bottom:14px';
+    row.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-weight:700;font-size:.92rem;color:var(--acc)">${fmtDate(sem.inicio)} → ${fmtDate(fin.toISOString().slice(0,10))}</div>
+      <button class="btnS" style="font-size:.72rem;padding:5px 12px" onclick="delSem(${si})">✕ Eliminar</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+      ${DIAS.map((d,i)=>`
+        <div style="background:var(--sur2);border-radius:8px;padding:9px 11px">
+          <div style="font-size:.65rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${d}</div>
+          <input value="${sem.dias[i]||''}" placeholder="—"
+            style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--bor);color:var(--txt);font-family:'Sora',sans-serif;font-size:.75rem;outline:none;padding:3px 0"
+            onchange="updDia(${si},${i},this.value)"
+            onfocus="this.style.borderBottomColor='var(--acc)'"
+            onblur="this.style.borderBottomColor='var(--bor)'">
+        </div>`).join('')}
+    </div>`;
+    el.appendChild(row);
+  });
+}
+function addSemana(){
+  const f=document.getElementById('semFecha').value;if(!f)return alert('Seleccioná una fecha');
+  const l=getLunes(f);if(DB.semanas.find(s=>s.inicio===l))return alert('Esa semana ya existe');
+  DB.semanas.push({inicio:l,dias:[null,null,null,null,null,null,null]});save();renderMenuSem();
+}
+function delSem(i){if(!confirm('¿Eliminar semana?'))return;DB.semanas.splice(i,1);save();renderMenuSem();}
+function updDia(si,di,v){DB.semanas[si].dias[di]=v.trim()||null;save();}
+
+// INFORMES
+function getDiario(f,sf){
+  const rows=[],sucs=sf?DB.sucursales.filter(s=>s.id===sf):DB.sucursales,dd=DB.registros[f]||{};
+  sucs.forEach(s=>{const sd=dd[s.id]||{};DB.viandas.forEach(v=>{const c=sd[v]||0;if(c>0)rows.push({sucursal:s.nombre,emoji:s.emoji,vianda:v,cantidad:c});});});
+  return rows;
+}
+function getAsistDia(f,sf){
+  const asist=DB.asistencia[f]||{},rows=[];
+  DB.empleados.forEach(emp=>{
+    if(!asist[emp.id])return;
+    const s=DB.sucursales.find(x=>x.id===emp.sucId);if(!s)return;
+    if(sf&&s.id!==sf)return;
+    rows.push({nombre:emp.nombre,sucursal:s.nombre,emoji:s.emoji});
+  });
+  return rows;
+}
+function renderDiario(){
+  const f=document.getElementById('rDDate').value,sf=document.getElementById('rDSuc').value;
+  const rows=getDiario(f,sf),asist=getAsistDia(f,sf),el=document.getElementById('diarioContent'),mh=getMenuDia(f);
+  if(!rows.length&&!asist.length){el.innerHTML='<div class="empty">Sin registros para esa fecha</div>';return;}
+  const tot=rows.reduce((a,r)=>a+r.cantidad,0);
+  const bySuc={};rows.forEach(r=>bySuc[r.sucursal]=(bySuc[r.sucursal]||0)+r.cantidad);
+  let h='';
+  if(mh) h+=`<div style="background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:13px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span style="font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.7px">Menú del día</span><span style="font-weight:700;color:var(--acc)">${mh}</span></div>`;
+  h+=`<div class="sumCards"><div class="sCard"><div class="sl">Total viandas</div><div class="sv">${tot}</div><div class="ss">unidades</div></div><div class="sCard"><div class="sl">Personal confirmado</div><div class="sv">${asist.length}</div><div class="ss">empleados</div></div>`;
+  Object.entries(bySuc).forEach(([s,c])=>{const sd=DB.sucursales.find(x=>x.nombre===s);h+=`<div class="sCard"><div class="sl">${sd?.emoji||''} ${s}</div><div class="sv">${c}</div><div class="ss">viandas</div></div>`;});
+  h+='</div>';
+  if(rows.length){
+    h+=`<div style="margin-bottom:22px"><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">📦 Viandas enviadas</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Sucursal</th><th>Vianda</th><th>Cantidad</th></tr></thead><tbody>`;
+    rows.forEach(r=>h+=`<tr><td>${r.emoji} ${r.sucursal}</td><td>${r.vianda}</td><td><span class="bO">${r.cantidad}</span></td></tr>`);
+    h+=`<tr class="tot"><td colspan="2">TOTAL</td><td>${tot}</td></tr></tbody></table></div></div>`;
+  }
+  if(asist.length){
+    h+=`<div><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">✅ Personal con vianda</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Empleado</th><th>Sucursal</th></tr></thead><tbody>`;
+    asist.forEach(a=>h+=`<tr><td>${a.nombre}</td><td>${a.emoji} ${a.sucursal}</td></tr>`);
+    h+=`</tbody></table></div></div>`;
+  }
+  el.innerHTML=h;
+}
+function exportDiario(){
+  const f=document.getElementById('rDDate').value,sf=document.getElementById('rDSuc').value;
+  const rows=getDiario(f,sf),asist=getAsistDia(f,sf),mh=getMenuDia(f);
+  const wb=XLSX.utils.book_new();
+  const w1=[['Informe Diario – Viandas Leno'],['Fecha:',f],['Menú del día:',mh||'—'],[],['Sucursal','Vianda','Cantidad']];
+  rows.forEach(r=>w1.push([r.sucursal,r.vianda,r.cantidad]));
+  w1.push(['','TOTAL',rows.reduce((a,r)=>a+r.cantidad,0)]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w1),'Viandas');
+  const w2=[['Personal con Vianda – '+f],[],['Empleado','Sucursal']];
+  asist.forEach(a=>w2.push([a.nombre,a.sucursal]));
+  w2.push([],[`Total: ${asist.length} empleados`]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w2),'Personal');
+  XLSX.writeFile(wb,`Viandas_Leno_Diario_${f}.xlsx`);
+}
+
+function getMensual(mes,sf){
+  const rows=[],sucs=sf?DB.sucursales.filter(s=>s.id===sf):DB.sucursales;
+  Object.keys(DB.registros).filter(f=>f.startsWith(mes)).sort().forEach(f=>{
+    const dd=DB.registros[f];sucs.forEach(s=>{const sd=dd[s.id]||{};DB.viandas.forEach(v=>{const c=sd[v]||0;if(c>0)rows.push({fecha:f,sucursal:s.nombre,emoji:s.emoji,vianda:v,cantidad:c});});});
+  });return rows;
+}
+function getAsistMes(mes,sf){
+  const rows=[];
+  Object.keys(DB.asistencia).filter(f=>f.startsWith(mes)).sort().forEach(f=>{
+    const asist=DB.asistencia[f]||{};
+    DB.empleados.forEach(emp=>{
+      if(!asist[emp.id])return;
+      const s=DB.sucursales.find(x=>x.id===emp.sucId);if(!s)return;
+      if(sf&&s.id!==sf)return;
+      rows.push({fecha:f,nombre:emp.nombre,sucursal:s.nombre,emoji:s.emoji});
+    });
+  });return rows;
+}
+function renderMensual(){
+  const mes=document.getElementById('rMMonth').value,sf=document.getElementById('rMSuc').value;
+  const rows=getMensual(mes,sf),asist=getAsistMes(mes,sf),el=document.getElementById('mensualContent');
+  if(!rows.length&&!asist.length){el.innerHTML='<div class="empty">Sin registros para ese mes</div>';return;}
+  const tot=rows.reduce((a,r)=>a+r.cantidad,0);
+  const bySuc={},byV={};
+  rows.forEach(r=>{bySuc[r.sucursal]=(bySuc[r.sucursal]||0)+r.cantidad;byV[r.vianda]=(byV[r.vianda]||0)+r.cantidad;});
+  let h=`<div class="sumCards"><div class="sCard"><div class="sl">Total viandas</div><div class="sv">${tot}</div><div class="ss">en el mes</div></div>`;
+  h+=`<div class="sCard"><div class="sl">Días registrados</div><div class="sv">${new Set(rows.map(r=>r.fecha)).size}</div><div class="ss">días</div></div>`;
+  h+=`<div class="sCard"><div class="sl">Personal activo</div><div class="sv">${new Set(asist.map(a=>a.nombre)).size}</div><div class="ss">personas</div></div>`;
+  Object.entries(bySuc).forEach(([s,c])=>{const sd=DB.sucursales.find(x=>x.nombre===s);h+=`<div class="sCard"><div class="sl">${sd?.emoji||''} ${s}</div><div class="sv">${c}</div><div class="ss">viandas</div></div>`;});
+  h+='</div>';
+  if(rows.length){
+    h+=`<div style="margin-bottom:22px"><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">📋 Detalle diario</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Fecha</th><th>Sucursal</th><th>Vianda</th><th>Cant.</th></tr></thead><tbody>`;
+    rows.forEach(r=>h+=`<tr><td><span class="bB">${fmtDate(r.fecha)}</span></td><td>${r.emoji} ${r.sucursal}</td><td>${r.vianda}</td><td><span class="bO">${r.cantidad}</span></td></tr>`);
+    h+=`<tr class="tot"><td colspan="3">TOTAL</td><td>${tot}</td></tr></tbody></table></div></div>`;
+  }
+  h+=`<div style="margin-bottom:22px"><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">🍽 Por Vianda</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Vianda</th><th>Total</th></tr></thead><tbody>`;
+  Object.entries(byV).sort((a,b)=>b[1]-a[1]).forEach(([v,c])=>h+=`<tr><td>${v}</td><td><span class="bG">${c}</span></td></tr>`);
+  h+=`<tr class="tot"><td>TOTAL</td><td>${tot}</td></tr></tbody></table></div></div>`;
+  if(asist.length){
+    const byEmp={};
+    asist.forEach(a=>{if(!byEmp[a.nombre])byEmp[a.nombre]={nombre:a.nombre,sucursal:a.sucursal,emoji:a.emoji,dias:0};byEmp[a.nombre].dias++;});
+    h+=`<div><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">👥 Viandas por empleado</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Empleado</th><th>Sucursal</th><th>Días</th></tr></thead><tbody>`;
+    Object.values(byEmp).sort((a,b)=>b.dias-a.dias).forEach(e=>h+=`<tr><td>${e.nombre}</td><td>${e.emoji} ${e.sucursal}</td><td><span class="bO">${e.dias}</span></td></tr>`);
+    h+=`</tbody></table></div></div>`;
+  }
+  el.innerHTML=h;
+}
+function exportMensual(){
+  const mes=document.getElementById('rMMonth').value,sf=document.getElementById('rMSuc').value;
+  const rows=getMensual(mes,sf),asist=getAsistMes(mes,sf);
+  const wb=XLSX.utils.book_new();
+  const w1=[['Informe Mensual – Viandas Leno'],['Mes:',mes],[],['Fecha','Sucursal','Vianda','Cantidad']];
+  rows.forEach(r=>w1.push([r.fecha,r.sucursal,r.vianda,r.cantidad]));
+  w1.push(['','','TOTAL',rows.reduce((a,r)=>a+r.cantidad,0)]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w1),'Detalle');
+  const bySuc={};rows.forEach(r=>bySuc[r.sucursal]=(bySuc[r.sucursal]||0)+r.cantidad);
+  const w2=[['Sucursal','Total']];Object.entries(bySuc).forEach(([s,c])=>w2.push([s,c]));
+  w2.push(['TOTAL',rows.reduce((a,r)=>a+r.cantidad,0)]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w2),'Por Sucursal');
+  const byV={};rows.forEach(r=>byV[r.vianda]=(byV[r.vianda]||0)+r.cantidad);
+  const w3=[['Vianda','Total']];Object.entries(byV).sort((a,b)=>b[1]-a[1]).forEach(([v,c])=>w3.push([v,c]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w3),'Por Vianda');
+  const byEmp={};asist.forEach(a=>{if(!byEmp[a.nombre])byEmp[a.nombre]={nombre:a.nombre,sucursal:a.sucursal,dias:0};byEmp[a.nombre].dias++;});
+  const w4=[['Empleado','Sucursal','Días con vianda']];
+  Object.values(byEmp).sort((a,b)=>b.dias-a.dias).forEach(e=>w4.push([e.nombre,e.sucursal,e.dias]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w4),'Personal');
+  XLSX.writeFile(wb,`Viandas_Leno_Mensual_${mes}.xlsx`);
+}
+
+// CONFIG
+function renderCfg(){
+  const el=document.getElementById('cfgSucList');if(!el)return;el.innerHTML='';
+  DB.sucursales.forEach(s=>{
+    const r=document.createElement('div');r.className='cfgRow';
+    r.innerHTML=`<span style="font-size:1.2rem">${s.emoji}</span><span style="flex:1">${s.nombre}</span><span style="font-size:.7rem;color:var(--mut)">${DB.empleados.filter(e=>e.sucId===s.id).length} emp.</span>`;
+    el.appendChild(r);
+  });
+}
+function addSucursal(){
+  const nom=document.getElementById('newSucNom').value.trim(),emo=document.getElementById('newSucEmo').value.trim()||'🍴';
+  if(!nom)return alert('Ingresá el nombre');
+  DB.sucursales.push({id:'s'+Date.now(),nombre:nom,emoji:emo});
+  save();renderCfg();renderSucGrid();populateSels();
+  document.getElementById('newSucNom').value='';document.getElementById('newSucEmo').value='';
+}
+function populateSels(){
+  ['rDSuc','rMSuc'].forEach(id=>{
+    const s=document.getElementById(id);s.innerHTML='<option value="">Todas</option>';
+    DB.sucursales.forEach(x=>s.innerHTML+=`<option value="${x.id}">${x.emoji} ${x.nombre}</option>`);
+  });
+}
+</script>
+</body>
+</html>
