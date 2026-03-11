@@ -873,6 +873,15 @@ function populateSels(){
     DB.sucursales.forEach(x=>s.innerHTML+=`<option value="${x.id}">${x.emoji} ${x.nombre}</option>`);
   });
 }
+// Exponer al scope global (necesario por ES modules de Firebase)
+window.doLogin=doLogin;window.doLogout=doLogout;window.showPage=showPage;
+window.onDateChange=onDateChange;window.toggleDelMode=toggleDelMode;
+window.addVianda=addVianda;window.delVianda=delVianda;window.chgCount=chgCount;
+window.togAsist=togAsist;window.addEmpleado=addEmpleado;window.delEmp=delEmp;
+window.addSemana=addSemana;window.delSem=delSem;window.updDia=updDia;
+window.renderDiario=renderDiario;window.exportDiario=exportDiario;
+window.renderMensual=renderMensual;window.exportMensual=exportMensual;
+window.addSucursal=addSucursal;window.changePass=changePass;
 </script>
 </body>
 </html>
