@@ -5,12 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Viandas Leno – Gestión</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDLH1Lye1MqA35SVE1y26kEo5IqHbx0vwM",
+  authDomain: "vianda-leno.firebaseapp.com",
+  projectId: "vianda-leno",
+  storageBucket: "vianda-leno.firebasestorage.app",
+  messagingSenderId: "374858829111",
+  appId: "1:374858829111:web:3a66d08bc9731dd31cdeb2"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+
+// ── Exponer al scope global ──
+window._fb = { db, doc, getDoc, setDoc, onSnapshot, collection, getDocs };
+window._fbReady = true;
+document.dispatchEvent(new Event('fbReady'));
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
 :root{--bg:#0e1118;--sur:#171b26;--sur2:#1d2133;--bor:#252b3d;--acc:#f5a623;--red:#e8504a;--grn:#2ed17e;--blu:#4a8fe8;--txt:#e8eaf2;--mut:#5e6680;--r:12px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
-#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 30% 20%,#181028 0%,#0e1118 65%)}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid var(--bor);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loadTxt{font-size:.85rem;color:var(--mut)}
+
+/* LOGIN */
+#loginScreen{display:none;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 30% 20%,#181028 0%,#0e1118 65%)}
 .lcard{background:var(--sur);border:1px solid var(--bor);border-radius:20px;padding:52px 44px;width:390px;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:up .45s ease}
 @keyframes up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
 .llogo{text-align:center;margin-bottom:36px}
@@ -22,11 +52,19 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-hei
 .btnLogin{width:100%;margin-top:30px;padding:14px;background:var(--acc);color:#0e1118;border:none;border-radius:8px;font-family:'Sora',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;transition:opacity .2s,transform .1s}
 .btnLogin:hover{opacity:.88;transform:translateY(-1px)}
 .lerr{margin-top:10px;color:var(--red);font-size:.78rem;text-align:center;display:none}
+
+/* SYNC badge */
+.syncBadge{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;padding:4px 10px;border-radius:20px;font-family:'JetBrains Mono',monospace}
+.syncBadge.ok{background:rgba(46,209,126,.12);color:var(--grn)}
+.syncBadge.saving{background:rgba(245,166,35,.12);color:var(--acc)}
+.syncBadge.err{background:rgba(232,80,74,.12);color:var(--red)}
+
+/* APP */
 #app{display:none}
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--sur);border-bottom:1px solid var(--bor);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
 .hbrand{font-size:1.25rem;font-weight:800;color:var(--acc);letter-spacing:-.5px}
 .hbrand span{color:var(--txt)}
-.hright{display:flex;align-items:center;gap:14px}
+.hright{display:flex;align-items:center;gap:10px}
 .btnOut{padding:7px 16px;background:transparent;border:1px solid var(--bor);border-radius:8px;color:var(--mut);font-family:'Sora',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s}
 .btnOut:hover{border-color:var(--red);color:var(--red)}
 .tabs{display:flex;gap:2px;padding:14px 28px 0;border-bottom:1px solid var(--bor);background:var(--sur);overflow-x:auto}
@@ -119,15 +157,19 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-hei
 .cfgIn:focus{border-color:var(--acc)}
 .cfgRow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bor);font-size:.85rem}
 .cfgRow:last-child{border-bottom:none}
-@media(max-width:700px){
-  .main{padding:14px}.tabs{padding:10px 14px 0}.hdr{padding:10px 14px}
-  .lcard{width:94vw;padding:36px 22px}
-}
+@media(max-width:700px){.main{padding:14px}.tabs{padding:10px 14px 0}.hdr{padding:10px 14px}.lcard{width:94vw;padding:36px 22px}}
 </style>
 </head>
 <body>
 
-<div id="loginScreen">
+<!-- LOADER -->
+<div id="loader">
+  <div class="spinner"></div>
+  <div class="loadTxt">Conectando con la nube...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen" style="display:none">
   <div class="lcard">
     <div class="llogo">
       <div class="brand">🍱 Viandas Leno</div>
@@ -144,10 +186,12 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-hei
   </div>
 </div>
 
+<!-- APP -->
 <div id="app">
   <div class="hdr">
     <div class="hbrand">🍱 Viandas <span>Leno</span></div>
     <div class="hright">
+      <span id="syncBadge" class="syncBadge ok">☁ Sincronizado</span>
       <span style="font-size:.78rem;color:var(--mut)">Hola, <strong style="color:var(--txt)">Admin</strong></span>
       <button class="btnOut" onclick="doLogout()">Salir</button>
     </div>
@@ -186,12 +230,12 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-hei
             <button class="btnA" onclick="addVianda()">+ Agregar</button>
             <button class="btnS" onclick="toggleDelMode()">Cancelar</button>
           </div>
-          <div class="tip" id="tipBox">💡 Usá <strong>+</strong> y <strong>−</strong> para registrar unidades enviadas. Los datos se guardan automáticamente.</div>
+          <div class="tip" id="tipBox">💡 Usá <strong>+</strong> y <strong>−</strong> para registrar unidades. Los cambios se sincronizan automáticamente con la nube ☁</div>
         </div>
         <div class="empPanel">
           <h3>👤 Personal que recibe vianda hoy</h3>
           <div class="empGrid" id="empDayGrid"></div>
-          <div class="tip" style="margin-top:12px">Tildá cada empleado que recibió su vianda. Se refleja en los informes.</div>
+          <div class="tip" style="margin-top:12px">Tildá cada empleado que recibió su vianda. Se guarda en la nube en tiempo real.</div>
         </div>
       </div>
     </div>
@@ -260,8 +304,11 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-hei
         <button class="btnA" onclick="changePass()" style="width:100%">Guardar</button>
       </div>
       <div class="cfgBox">
-        <h3>Sobre los datos</h3>
-        <p>Los datos se guardan en el navegador (localStorage). Persisten mientras no se limpie la caché. Para uso compartido en múltiples dispositivos se recomienda una solución con base de datos en servidor.</p>
+        <h3>☁ Estado de sincronización</h3>
+        <p>Todos los datos se guardan en Firebase (nube). Podés usar la app desde cualquier dispositivo y los datos siempre estarán actualizados en tiempo real.</p>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+          <span id="cfgSyncStatus" class="syncBadge ok">☁ Conectado a Firebase</span>
+        </div>
       </div>
     </div>
 
@@ -269,8 +316,10 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-hei
 </div>
 
 <script>
+// ══════════════════════════════════════════════
+//  DEFAULTS
+// ══════════════════════════════════════════════
 const DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
-const KEY='viandasLenoV3';
 
 const D_SUC=[
   {id:'acq', nombre:'Aconquija',      emoji:'🍔'},
@@ -282,71 +331,63 @@ const D_SUC=[
 ];
 
 const D_EMP=[
-  // Aconquija
-  {id:'e1', nombre:'Alexia Jimenez',            sucId:'acq'},
-  {id:'e2', nombre:'Carlos Eduardo Argañaraz',  sucId:'acq'},
-  {id:'e3', nombre:'Matías Gabriel Vilca',      sucId:'acq'},
-  {id:'e4', nombre:'Diaz Alexis Maximiliano',   sucId:'acq'},
-  {id:'e5', nombre:'Gramajo Martín Ignacio',    sucId:'acq'},
-  {id:'e6', nombre:'Martina Gonzalez',          sucId:'acq'},
-  {id:'e7', nombre:'Belen Correa',              sucId:'acq'},
-  {id:'e8', nombre:'Brenda Raniero',            sucId:'acq'},
-  {id:'e9', nombre:'Facundo Toledo',            sucId:'acq'},
-  {id:'e10',nombre:'Camila Coronel',            sucId:'acq'},
-  {id:'e11',nombre:'Marha Juarez',              sucId:'acq'},
-  // Barrio Norte
-  {id:'e12',nombre:'Pilar Gimenez',             sucId:'bn'},
-  {id:'e13',nombre:'Celeste Herrera',           sucId:'bn'},
-  {id:'e14',nombre:'Nahuel Juarez',             sucId:'bn'},
-  {id:'e15',nombre:'Martina Maria Gonzalez',    sucId:'bn'},
-  {id:'e16',nombre:'Tamara Rocio Rearte',       sucId:'bn'},
-  {id:'e17',nombre:'Alvaro Gonzalez',           sucId:'bn'},
-  {id:'e18',nombre:'Lucas Cañete',              sucId:'bn'},
-  // Tafi Viejo
-  {id:'e19',nombre:'Agostina Priscila Gonzalez',sucId:'tv'},
-  {id:'e20',nombre:'Damian Medina',             sucId:'tv'},
-  {id:'e21',nombre:'Leguizamon Héctor',         sucId:'tv'},
-  {id:'e22',nombre:'Lucas Solaiman',            sucId:'tv'},
-  {id:'e23',nombre:'Noelia Deiana',             sucId:'tv'},
-  {id:'e24',nombre:'Ulixes Diaz',               sucId:'tv'},
-  {id:'e25',nombre:'Jose Leal Toscano',         sucId:'tv'},
-  {id:'e26',nombre:'Matias Vilca',              sucId:'tv'},
-  {id:'e27',nombre:'Lucia Quintana',            sucId:'tv'},
-  // Administración
-  {id:'e28',nombre:'Luis Ybarra',               sucId:'adm'},
-  {id:'e29',nombre:'Julio Monteros',            sucId:'adm'},
-  {id:'e30',nombre:'Zulema Roldan',             sucId:'adm'},
-  {id:'e31',nombre:'Matias Caseres',            sucId:'adm'},
-  {id:'e32',nombre:'Paula Ferraro',             sucId:'adm'},
-  // Pizzería
-  {id:'e33',nombre:'Julian Ramon',              sucId:'piz'},
-  {id:'e34',nombre:'Martin Gauna',              sucId:'piz'},
-  {id:'e35',nombre:'Marcelo Abregu',            sucId:'piz'},
-  {id:'e36',nombre:'Lucas Cañete (Piz)',        sucId:'piz'},
-  {id:'e37',nombre:'Belen Correa (Piz)',        sucId:'piz'},
-  // CDP
-  {id:'e38',nombre:'Rocio Camacho',             sucId:'cdp'},
-  {id:'e39',nombre:'Nahuel Quiros',             sucId:'cdp'},
-  {id:'e40',nombre:'Alvaro Cassara',            sucId:'cdp'},
-  {id:'e41',nombre:'Maximiliano Ramirez',       sucId:'cdp'},
-  {id:'e42',nombre:'Mauro Conde',               sucId:'cdp'},
-  {id:'e43',nombre:'Juan Avalos',               sucId:'cdp'},
+  {id:'e1', nombre:'Alexia Jimenez',             sucId:'acq'},
+  {id:'e2', nombre:'Carlos Eduardo Argañaraz',   sucId:'acq'},
+  {id:'e3', nombre:'Matías Gabriel Vilca',       sucId:'acq'},
+  {id:'e4', nombre:'Diaz Alexis Maximiliano',    sucId:'acq'},
+  {id:'e5', nombre:'Gramajo Martín Ignacio',     sucId:'acq'},
+  {id:'e6', nombre:'Martina Gonzalez',           sucId:'acq'},
+  {id:'e7', nombre:'Belen Correa',               sucId:'acq'},
+  {id:'e8', nombre:'Brenda Raniero',             sucId:'acq'},
+  {id:'e9', nombre:'Facundo Toledo',             sucId:'acq'},
+  {id:'e10',nombre:'Camila Coronel',             sucId:'acq'},
+  {id:'e11',nombre:'Marha Juarez',               sucId:'acq'},
+  {id:'e12',nombre:'Pilar Gimenez',              sucId:'bn'},
+  {id:'e13',nombre:'Celeste Herrera',            sucId:'bn'},
+  {id:'e14',nombre:'Nahuel Juarez',              sucId:'bn'},
+  {id:'e15',nombre:'Martina Maria Gonzalez',     sucId:'bn'},
+  {id:'e16',nombre:'Tamara Rocio Rearte',        sucId:'bn'},
+  {id:'e17',nombre:'Alvaro Gonzalez',            sucId:'bn'},
+  {id:'e18',nombre:'Lucas Cañete',               sucId:'bn'},
+  {id:'e19',nombre:'Agostina Priscila Gonzalez', sucId:'tv'},
+  {id:'e20',nombre:'Damian Medina',              sucId:'tv'},
+  {id:'e21',nombre:'Leguizamon Héctor',          sucId:'tv'},
+  {id:'e22',nombre:'Lucas Solaiman',             sucId:'tv'},
+  {id:'e23',nombre:'Noelia Deiana',              sucId:'tv'},
+  {id:'e24',nombre:'Ulixes Diaz',                sucId:'tv'},
+  {id:'e25',nombre:'Jose Leal Toscano',          sucId:'tv'},
+  {id:'e26',nombre:'Matias Vilca',               sucId:'tv'},
+  {id:'e27',nombre:'Lucia Quintana',             sucId:'tv'},
+  {id:'e28',nombre:'Luis Ybarra',                sucId:'adm'},
+  {id:'e29',nombre:'Julio Monteros',             sucId:'adm'},
+  {id:'e30',nombre:'Zulema Roldan',              sucId:'adm'},
+  {id:'e31',nombre:'Matias Caseres',             sucId:'adm'},
+  {id:'e32',nombre:'Paula Ferraro',              sucId:'adm'},
+  {id:'e33',nombre:'Julian Ramon',               sucId:'piz'},
+  {id:'e34',nombre:'Martin Gauna',               sucId:'piz'},
+  {id:'e35',nombre:'Marcelo Abregu',             sucId:'piz'},
+  {id:'e36',nombre:'Lucas Cañete (Piz)',         sucId:'piz'},
+  {id:'e37',nombre:'Belen Correa (Piz)',         sucId:'piz'},
+  {id:'e38',nombre:'Rocio Camacho',              sucId:'cdp'},
+  {id:'e39',nombre:'Nahuel Quiros',              sucId:'cdp'},
+  {id:'e40',nombre:'Alvaro Cassara',             sucId:'cdp'},
+  {id:'e41',nombre:'Maximiliano Ramirez',        sucId:'cdp'},
+  {id:'e42',nombre:'Mauro Conde',                sucId:'cdp'},
+  {id:'e43',nombre:'Juan Avalos',                sucId:'cdp'},
 ];
 
 const D_VIANDAS=[
   'Milanesa de carne c/ puré','Milanesa de pollo c/ puré',
   'Medallon de pollo c/ arroz','Pata muslo c/ arroz',
-  'Costeleta c/ puré','Suprema c/ papas',
-  'Bife de pollo c/ papas','Fideos c/ salsa boloñesa',
-  'Arroz con pollo','Kipe c/ arroz','Albóndigas c/ arroz',
-  'Tarta de pollo','Wok de pollo c/ fideos',
-  'Pastel de papas','Hamburguesas c/ puré',
-  'Canelones de pollo','Pollo a la crema c/ puré',
-  // Veggie
+  'Costeleta c/ puré','Suprema c/ papas','Bife de pollo c/ papas',
+  'Fideos c/ salsa boloñesa','Arroz con pollo','Kipe c/ arroz',
+  'Albóndigas c/ arroz','Tarta de pollo','Wok de pollo c/ fideos',
+  'Pastel de papas','Hamburguesas c/ puré','Canelones de pollo',
+  'Pollo a la crema c/ puré',
   'Medallon de zanahoria c/ puré','Milanesa de berenjena c/ puré',
-  'Milanesa de soja c/ ensalada','Wok de verduras',
-  'Tarta de verduras','Bocadito de espinaca c/ arroz',
-  'Coreanito gratinado c/ ensalada','Zapallito relleno c/ arroz',
+  'Milanesa de soja c/ ensalada','Wok de verduras','Tarta de verduras',
+  'Bocadito de espinaca c/ arroz','Coreanito gratinado c/ ensalada',
+  'Zapallito relleno c/ arroz',
 ];
 
 const D_SEMANAS=[
@@ -363,29 +404,133 @@ const D_SEMANAS=[
   {inicio:'2026-03-09',dias:['Kipe c/ ensalada papa','Albóndigas c/ arroz','Tarta de pollo y puerro','Milanesa c/ fideo','Pollo a la crema c/ puré','Pastel de papa','Wok de fideos c/ verdura']},
 ];
 
-// STORAGE
-function load(){
-  try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
-  return{sucursales:D_SUC,empleados:D_EMP,viandas:D_VIANDAS,semanas:D_SEMANAS,registros:{},asistencia:{},creds:{user:'admin',pass:'leno2799'}};
-}
-function save(){localStorage.setItem(KEY,JSON.stringify(DB));}
-let DB=load();
+// ══════════════════════════════════════════════
+//  DB EN MEMORIA  (se sincroniza con Firebase)
+// ══════════════════════════════════════════════
+let DB = {
+  sucursales: D_SUC,
+  empleados:  D_EMP,
+  viandas:    D_VIANDAS,
+  semanas:    D_SEMANAS,
+  registros:  {},   // registros[fecha][sucId][vianda] = count
+  asistencia: {},   // asistencia[fecha][empId] = bool
+  creds:      {user:'admin', pass:'leno2799'}
+};
 
-// AUTH
-function doLogin(){
-  const u=document.getElementById('lusr').value.trim(),p=document.getElementById('lpas').value;
-  if(u===DB.creds.user&&p===DB.creds.pass){
+let fb, saveTimer = null;
+
+// ══════════════════════════════════════════════
+//  FIREBASE — CARGAR Y GUARDAR
+// ══════════════════════════════════════════════
+async function fbLoad() {
+  const {db, doc, getDoc} = window._fb;
+  try {
+    const snap = await getDoc(doc(db, 'app', 'data'));
+    if (snap.exists()) {
+      const remote = snap.data();
+      // Merge: datos remotos toman precedencia, defaults como fallback
+      DB.sucursales = remote.sucursales || D_SUC;
+      DB.empleados  = remote.empleados  || D_EMP;
+      DB.viandas    = remote.viandas    || D_VIANDAS;
+      DB.semanas    = remote.semanas    || D_SEMANAS;
+      DB.registros  = remote.registros  || {};
+      DB.asistencia = remote.asistencia || {};
+      DB.creds      = remote.creds      || {user:'admin', pass:'leno2799'};
+    } else {
+      // Primera vez: subir defaults
+      await fbSaveNow();
+    }
+    setSyncBadge('ok');
+  } catch(e) {
+    console.error('Firebase load error:', e);
+    setSyncBadge('err');
+  }
+}
+
+async function fbSaveNow() {
+  const {db, doc, setDoc} = window._fb;
+  try {
+    setSyncBadge('saving');
+    await setDoc(doc(db, 'app', 'data'), {
+      sucursales: DB.sucursales,
+      empleados:  DB.empleados,
+      viandas:    DB.viandas,
+      semanas:    DB.semanas,
+      registros:  DB.registros,
+      asistencia: DB.asistencia,
+      creds:      DB.creds
+    });
+    setSyncBadge('ok');
+  } catch(e) {
+    console.error('Firebase save error:', e);
+    setSyncBadge('err');
+  }
+}
+
+// Debounce: guarda 800ms después del último cambio
+function save() {
+  setSyncBadge('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(fbSaveNow, 800);
+}
+
+function setSyncBadge(state) {
+  const el = document.getElementById('syncBadge');
+  if (!el) return;
+  if (state === 'ok')     { el.className='syncBadge ok';     el.textContent='☁ Sincronizado'; }
+  if (state === 'saving') { el.className='syncBadge saving'; el.textContent='↑ Guardando...'; }
+  if (state === 'err')    { el.className='syncBadge err';    el.textContent='⚠ Sin conexión'; }
+}
+
+// ══════════════════════════════════════════════
+//  ARRANQUE
+// ══════════════════════════════════════════════
+document.addEventListener('fbReady', async () => {
+  await fbLoad();
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+});
+
+// Timeout por si Firebase tarda
+setTimeout(() => {
+  if (document.getElementById('loader').style.display !== 'none') {
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    setSyncBadge('err');
+  }
+}, 6000);
+
+// ══════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════
+function doLogin() {
+  const u=document.getElementById('lusr').value.trim(), p=document.getElementById('lpas').value;
+  if(u===DB.creds.user && p===DB.creds.pass) {
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
     initApp();
-  }else document.getElementById('lerr').style.display='block';
+  } else {
+    document.getElementById('lerr').style.display='block';
+  }
 }
 document.getElementById('lpas').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 document.getElementById('lusr').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
-function doLogout(){document.getElementById('app').style.display='none';document.getElementById('loginScreen').style.display='flex';document.getElementById('lusr').value='';document.getElementById('lpas').value='';}
-function changePass(){const np=document.getElementById('newPass').value;if(!np)return alert('Ingresá contraseña');DB.creds.pass=np;save();alert('✅ Guardado');document.getElementById('newPass').value='';}
+function doLogout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('lusr').value='';
+  document.getElementById('lpas').value='';
+}
+function changePass(){
+  const np=document.getElementById('newPass').value;
+  if(!np)return alert('Ingresá contraseña');
+  DB.creds.pass=np; save(); alert('✅ Contraseña actualizada');
+  document.getElementById('newPass').value='';
+}
 
-// NAV
+// ══════════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════════
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -396,21 +541,25 @@ function showPage(id,btn){
   if(id==='config')renderCfg();
 }
 
-// INIT
-let selSuc=null,delMode=false;
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+let selSuc=null, delMode=false;
 function initApp(){
   const t=todayStr();
   document.getElementById('regDate').value=t;
   document.getElementById('rDDate').value=t;
   document.getElementById('rMMonth').value=t.slice(0,7);
   document.getElementById('semFecha').value=getLunes(t);
-  renderSucGrid();populateSels();
+  renderSucGrid(); populateSels();
 }
 function todayStr(){return new Date().toISOString().slice(0,10);}
 function getLunes(d){const dt=new Date(d+'T00:00:00'),dw=dt.getDay(),df=dw===0?-6:1-dw;dt.setDate(dt.getDate()+df);return dt.toISOString().slice(0,10);}
 function fmtDate(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
 
-// SUCURSALES
+// ══════════════════════════════════════════════
+//  SUCURSALES
+// ══════════════════════════════════════════════
 function renderSucGrid(){
   const g=document.getElementById('sucGrid'),f=document.getElementById('regDate').value;
   g.innerHTML='';
@@ -426,7 +575,9 @@ function getTotSuc(id,f){const d=DB.registros[f];if(!d||!d[id])return 0;return O
 function selectSuc(id){selSuc=id;delMode=false;document.getElementById('regPanel').style.display='block';renderSucGrid();renderVGrid();renderEmpDay();}
 function onDateChange(){renderSucGrid();if(selSuc){renderVGrid();renderEmpDay();}}
 
-// MENÚ DEL DÍA
+// ══════════════════════════════════════════════
+//  MENÚ DEL DÍA
+// ══════════════════════════════════════════════
 function getMenuDia(f){
   if(!f)return null;
   const d=new Date(f+'T00:00:00'),dw=d.getDay(),idx=dw===0?6:dw-1;
@@ -437,7 +588,9 @@ function getMenuDia(f){
   return null;
 }
 
-// VIANDAS
+// ══════════════════════════════════════════════
+//  VIANDAS
+// ══════════════════════════════════════════════
 function renderVGrid(){
   const s=DB.sucursales.find(x=>x.id===selSuc);
   document.getElementById('selLabel').innerHTML=`${s.emoji} <span>${s.nombre}</span>`;
@@ -467,18 +620,30 @@ function chgCount(name,delta){
   if(!DB.registros[f])DB.registros[f]={};
   if(!DB.registros[f][selSuc])DB.registros[f][selSuc]={};
   DB.registros[f][selSuc][name]=Math.max(0,(DB.registros[f][selSuc][name]||0)+delta);
-  save();renderVGrid();renderSucGrid();
+  save(); renderVGrid(); renderSucGrid();
 }
 function toggleDelMode(){delMode=!delMode;renderVGrid();}
-function addVianda(){const i=document.getElementById('newVname'),n=i.value.trim();if(!n)return;if(DB.viandas.includes(n))return alert('Ya existe');DB.viandas.push(n);save();i.value='';renderVGrid();}
-function delVianda(name){if(!confirm(`¿Eliminar "${name}"?`))return;DB.viandas=DB.viandas.filter(v=>v!==name);Object.values(DB.registros).forEach(d=>Object.values(d).forEach(s=>delete s[name]));save();renderVGrid();}
+function addVianda(){
+  const i=document.getElementById('newVname'),n=i.value.trim();
+  if(!n)return;if(DB.viandas.includes(n))return alert('Ya existe');
+  DB.viandas.push(n);save();i.value='';renderVGrid();
+}
+function delVianda(name){
+  if(!confirm(`¿Eliminar "${name}"?`))return;
+  DB.viandas=DB.viandas.filter(v=>v!==name);
+  Object.values(DB.registros).forEach(d=>Object.values(d).forEach(s=>delete s[name]));
+  save();renderVGrid();
+}
 document.getElementById('newVname').addEventListener('keydown',e=>{if(e.key==='Enter')addVianda()});
 
-// EMPLEADOS DEL DÍA
+// ══════════════════════════════════════════════
+//  EMPLEADOS DEL DÍA
+// ══════════════════════════════════════════════
 function renderEmpDay(){
-  const f=document.getElementById('regDate').value,asist=DB.asistencia[f]||{},emps=DB.empleados.filter(e=>e.sucId===selSuc),g=document.getElementById('empDayGrid');
+  const f=document.getElementById('regDate').value,asist=DB.asistencia[f]||{};
+  const emps=DB.empleados.filter(e=>e.sucId===selSuc),g=document.getElementById('empDayGrid');
   g.innerHTML='';
-  if(!emps.length){g.innerHTML='<div style="font-size:.8rem;color:var(--mut);padding:8px">Sin empleados en esta sucursal. Agregá desde 👥 Personal.</div>';return;}
+  if(!emps.length){g.innerHTML='<div style="font-size:.8rem;color:var(--mut);padding:8px">Sin empleados en esta sucursal.</div>';return;}
   emps.forEach(emp=>{
     const on=!!asist[emp.id],el=document.createElement('div');
     el.className='empCard';
@@ -486,9 +651,15 @@ function renderEmpDay(){
     g.appendChild(el);
   });
 }
-function togAsist(empId,f){if(!DB.asistencia[f])DB.asistencia[f]={};DB.asistencia[f][empId]=!DB.asistencia[f][empId];save();renderEmpDay();}
+function togAsist(empId,f){
+  if(!DB.asistencia[f])DB.asistencia[f]={};
+  DB.asistencia[f][empId]=!DB.asistencia[f][empId];
+  save();renderEmpDay();
+}
 
-// EMPLEADOS PAGE
+// ══════════════════════════════════════════════
+//  EMPLEADOS PAGE
+// ══════════════════════════════════════════════
 function renderEmpPage(){
   const sel=document.getElementById('empSuc');
   sel.innerHTML='';
@@ -511,11 +682,17 @@ function renderEmpPage(){
 function addEmpleado(){
   const nom=document.getElementById('empNom').value.trim(),sucId=document.getElementById('empSuc').value;
   if(!nom)return alert('Ingresá el nombre');
-  DB.empleados.push({id:'e'+(Date.now()),nombre:nom,sucId});save();document.getElementById('empNom').value='';renderEmpPage();
+  DB.empleados.push({id:'e'+Date.now(),nombre:nom,sucId});
+  save();document.getElementById('empNom').value='';renderEmpPage();
 }
-function delEmp(id){if(!confirm('¿Eliminar empleado?'))return;DB.empleados=DB.empleados.filter(e=>e.id!==id);save();renderEmpPage();}
+function delEmp(id){
+  if(!confirm('¿Eliminar empleado?'))return;
+  DB.empleados=DB.empleados.filter(e=>e.id!==id);save();renderEmpPage();
+}
 
-// MENÚ SEMANAL
+// ══════════════════════════════════════════════
+//  MENÚ SEMANAL
+// ══════════════════════════════════════════════
 function renderMenuSem(){
   const el=document.getElementById('menuSemGrid');el.innerHTML='';
   if(!DB.semanas.length){el.innerHTML='<div class="empty">Sin semanas. Agregá una.</div>';return;}
@@ -525,18 +702,16 @@ function renderMenuSem(){
     row.style.cssText='background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:18px;margin-bottom:14px';
     row.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <div style="font-weight:700;font-size:.92rem;color:var(--acc)">${fmtDate(sem.inicio)} → ${fmtDate(fin.toISOString().slice(0,10))}</div>
-      <button class="btnS" style="font-size:.72rem;padding:5px 12px" onclick="delSem(${si})">✕ Eliminar</button>
-    </div>
+      <button class="btnS" style="font-size:.72rem;padding:5px 12px" onclick="delSem(${si})">✕ Eliminar</button></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
-      ${DIAS.map((d,i)=>`
-        <div style="background:var(--sur2);border-radius:8px;padding:9px 11px">
-          <div style="font-size:.65rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${d}</div>
-          <input value="${sem.dias[i]||''}" placeholder="—"
-            style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--bor);color:var(--txt);font-family:'Sora',sans-serif;font-size:.75rem;outline:none;padding:3px 0"
-            onchange="updDia(${si},${i},this.value)"
-            onfocus="this.style.borderBottomColor='var(--acc)'"
-            onblur="this.style.borderBottomColor='var(--bor)'">
-        </div>`).join('')}
+      ${DIAS.map((d,i)=>`<div style="background:var(--sur2);border-radius:8px;padding:9px 11px">
+        <div style="font-size:.65rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${d}</div>
+        <input value="${sem.dias[i]||''}" placeholder="—"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--bor);color:var(--txt);font-family:'Sora',sans-serif;font-size:.75rem;outline:none;padding:3px 0"
+          onchange="updDia(${si},${i},this.value)"
+          onfocus="this.style.borderBottomColor='var(--acc)'"
+          onblur="this.style.borderBottomColor='var(--bor)'">
+      </div>`).join('')}
     </div>`;
     el.appendChild(row);
   });
@@ -544,12 +719,15 @@ function renderMenuSem(){
 function addSemana(){
   const f=document.getElementById('semFecha').value;if(!f)return alert('Seleccioná una fecha');
   const l=getLunes(f);if(DB.semanas.find(s=>s.inicio===l))return alert('Esa semana ya existe');
-  DB.semanas.push({inicio:l,dias:[null,null,null,null,null,null,null]});save();renderMenuSem();
+  DB.semanas.push({inicio:l,dias:[null,null,null,null,null,null,null]});
+  save();renderMenuSem();
 }
 function delSem(i){if(!confirm('¿Eliminar semana?'))return;DB.semanas.splice(i,1);save();renderMenuSem();}
 function updDia(si,di,v){DB.semanas[si].dias[di]=v.trim()||null;save();}
 
-// INFORMES
+// ══════════════════════════════════════════════
+//  INFORMES
+// ══════════════════════════════════════════════
 function getDiario(f,sf){
   const rows=[],sucs=sf?DB.sucursales.filter(s=>s.id===sf):DB.sucursales,dd=DB.registros[f]||{};
   sucs.forEach(s=>{const sd=dd[s.id]||{};DB.viandas.forEach(v=>{const c=sd[v]||0;if(c>0)rows.push({sucursal:s.nombre,emoji:s.emoji,vianda:v,cantidad:c});});});
@@ -572,7 +750,7 @@ function renderDiario(){
   const tot=rows.reduce((a,r)=>a+r.cantidad,0);
   const bySuc={};rows.forEach(r=>bySuc[r.sucursal]=(bySuc[r.sucursal]||0)+r.cantidad);
   let h='';
-  if(mh) h+=`<div style="background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:13px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span style="font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.7px">Menú del día</span><span style="font-weight:700;color:var(--acc)">${mh}</span></div>`;
+  if(mh)h+=`<div style="background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:13px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span style="font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.7px">Menú del día</span><span style="font-weight:700;color:var(--acc)">${mh}</span></div>`;
   h+=`<div class="sumCards"><div class="sCard"><div class="sl">Total viandas</div><div class="sv">${tot}</div><div class="ss">unidades</div></div><div class="sCard"><div class="sl">Personal confirmado</div><div class="sv">${asist.length}</div><div class="ss">empleados</div></div>`;
   Object.entries(bySuc).forEach(([s,c])=>{const sd=DB.sucursales.find(x=>x.nombre===s);h+=`<div class="sCard"><div class="sl">${sd?.emoji||''} ${s}</div><div class="sv">${c}</div><div class="ss">viandas</div></div>`;});
   h+='</div>';
@@ -602,7 +780,6 @@ function exportDiario(){
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w2),'Personal');
   XLSX.writeFile(wb,`Viandas_Leno_Diario_${f}.xlsx`);
 }
-
 function getMensual(mes,sf){
   const rows=[],sucs=sf?DB.sucursales.filter(s=>s.id===sf):DB.sucursales;
   Object.keys(DB.registros).filter(f=>f.startsWith(mes)).sort().forEach(f=>{
@@ -672,7 +849,9 @@ function exportMensual(){
   XLSX.writeFile(wb,`Viandas_Leno_Mensual_${mes}.xlsx`);
 }
 
-// CONFIG
+// ══════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════
 function renderCfg(){
   const el=document.getElementById('cfgSucList');if(!el)return;el.innerHTML='';
   DB.sucursales.forEach(s=>{
