@@ -607,10 +607,14 @@ function renderVGrid(){
   DB.viandas.forEach(name=>{
     const count=sReg[name]||0,el=document.createElement('div');
     el.className='vBtn'+(delMode?' dm':'');
+    el.dataset.vianda=name;
     if(delMode){
-      el.innerHTML=`<div class="vdx" onclick="delVianda(${JSON.stringify(name)})">×</div><div class="vName">${name}</div><div class="vCount">${count}</div>`;
+      el.innerHTML=`<div class="vdx" data-del="1">×</div><div class="vName">${name}</div><div class="vCount">${count}</div>`;
+      el.querySelector('.vdx').addEventListener('click',()=>delVianda(name));
     }else{
-      el.innerHTML=`<div class="vName">${name}</div><div class="vCount">${count}</div><div class="vCtrl"><button class="vm" onclick="chgCount(${JSON.stringify(name)},-1)">−</button><button class="vp" onclick="chgCount(${JSON.stringify(name)},+1)">+</button></div>`;
+      el.innerHTML=`<div class="vName">${name}</div><div class="vCount" id="vc_${CSS.escape(name)}">${count}</div><div class="vCtrl"><button class="vm">−</button><button class="vp">+</button></div>`;
+      el.querySelector('.vm').addEventListener('click',()=>chgCount(name,-1));
+      el.querySelector('.vp').addEventListener('click',()=>chgCount(name,+1));
     }
     g.appendChild(el);
   });
@@ -647,7 +651,8 @@ function renderEmpDay(){
   emps.forEach(emp=>{
     const on=!!asist[emp.id],el=document.createElement('div');
     el.className='empCard';
-    el.innerHTML=`<div><div class="eName">${emp.nombre}</div></div><button class="empTog ${on?'on':'off'}" onclick="togAsist('${emp.id}','${f}')">${on?'✓':'○'}</button>`;
+    el.innerHTML=`<div><div class="eName">${emp.nombre}</div></div><button class="empTog ${on?'on':'off'}">${on?'✓':'○'}</button>`;
+    el.querySelector('.empTog').addEventListener('click',()=>togAsist(emp.id,f));
     g.appendChild(el);
   });
 }
@@ -673,7 +678,8 @@ function renderEmpPage(){
     const g=document.createElement('div');g.className='empGrid';
     emps.forEach(emp=>{
       const ec=document.createElement('div');ec.className='empCard';
-      ec.innerHTML=`<div><div class="eName">${emp.nombre}</div></div><button class="btnS" style="padding:4px 10px;font-size:.72rem" onclick="delEmp('${emp.id}')">✕</button>`;
+      ec.innerHTML=`<div><div class="eName">${emp.nombre}</div></div><button class="btnS" style="padding:4px 10px;font-size:.72rem">✕</button>`;
+      ec.querySelector('.btnS').addEventListener('click',()=>delEmp(emp.id));
       g.appendChild(ec);
     });
     box.appendChild(g);el.appendChild(box);
@@ -702,17 +708,26 @@ function renderMenuSem(){
     row.style.cssText='background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:18px;margin-bottom:14px';
     row.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <div style="font-weight:700;font-size:.92rem;color:var(--acc)">${fmtDate(sem.inicio)} → ${fmtDate(fin.toISOString().slice(0,10))}</div>
-      <button class="btnS" style="font-size:.72rem;padding:5px 12px" onclick="delSem(${si})">✕ Eliminar</button></div>
+      <button class="btnS del-sem" style="font-size:.72rem;padding:5px 12px" data-si="${si}">✕ Eliminar</button></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
       ${DIAS.map((d,i)=>`<div style="background:var(--sur2);border-radius:8px;padding:9px 11px">
         <div style="font-size:.65rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${d}</div>
-        <input value="${sem.dias[i]||''}" placeholder="—"
+        <input value="${sem.dias[i]||''}" placeholder="—" data-si="${si}" data-di="${i}"
           style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--bor);color:var(--txt);font-family:'Sora',sans-serif;font-size:.75rem;outline:none;padding:3px 0"
-          onchange="updDia(${si},${i},this.value)"
           onfocus="this.style.borderBottomColor='var(--acc)'"
           onblur="this.style.borderBottomColor='var(--bor)'">
       </div>`).join('')}
     </div>`;
+    // bind delete button
+    const delBtn = row.querySelector('.del-sem');
+    if(delBtn){
+      const idx = parseInt(delBtn.dataset.si);
+      delBtn.addEventListener('click',()=>delSem(idx));
+    }
+    // bind dia inputs
+    row.querySelectorAll('input[data-si]').forEach(inp=>{
+      inp.addEventListener('change',e=>updDia(parseInt(e.target.dataset.si),parseInt(e.target.dataset.di),e.target.value));
+    });
     el.appendChild(row);
   });
 }
@@ -875,6 +890,7 @@ function populateSels(){
 }
 // Exponer al scope global (necesario por ES modules de Firebase)
 window.doLogin=doLogin;window.doLogout=doLogout;window.showPage=showPage;
+window.selectSuc=selectSuc;
 window.onDateChange=onDateChange;window.toggleDelMode=toggleDelMode;
 window.addVianda=addVianda;window.delVianda=delVianda;window.chgCount=chgCount;
 window.togAsist=togAsist;window.addEmpleado=addEmpleado;window.delEmp=delEmp;
