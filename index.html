@@ -203,6 +203,7 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-hei
     <button class="tab" onclick="showPage('diario',this)">📊 Informe Diario</button>
     <button class="tab" onclick="showPage('mensual',this)">📆 Informe Mensual</button>
     <button class="tab" onclick="showPage('config',this)">⚙ Config</button>
+    <button class="tab" onclick="showPage('elecciones',this)">📝 Elecciones</button>
   </div>
   <div class="main">
 
@@ -284,6 +285,17 @@ body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--txt);min-hei
         <div class="btns"><button class="btnB" onclick="renderMensual()">🔍 Ver</button><button class="btnG" onclick="exportMensual()">⬇ Excel</button></div>
       </div>
       <div id="mensualContent"><div class="empty">Seleccioná un mes y presioná Ver</div></div>
+    </div>
+
+    <!-- ELECCIONES DEL FORM -->
+    <div id="page-elecciones" class="page">
+      <div class="stitle">📝 Elecciones <span>del Formulario</span></div>
+      <div class="rCtrl">
+        <div><label>Fecha</label><input type="date" id="elecDate"></div>
+        <div><label>Sucursal</label><select id="elecSuc"><option value="">Todas</option></select></div>
+        <div class="btns"><button class="btnB" onclick="renderElecciones()">🔍 Ver</button><button class="btnG" onclick="exportElecciones()">⬇ Excel</button></div>
+      </div>
+      <div id="elecContent"><div class="empty">Seleccioná una fecha para ver las elecciones del formulario</div></div>
     </div>
 
     <!-- CONFIG -->
@@ -888,6 +900,84 @@ function populateSels(){
     DB.sucursales.forEach(x=>s.innerHTML+=`<option value="${x.id}">${x.emoji} ${x.nombre}</option>`);
   });
 }
+// ══════════════════════════════════════════════
+//  ELECCIONES DEL FORMULARIO
+// ══════════════════════════════════════════════
+async function renderElecciones() {
+  const fecha = document.getElementById('elecDate').value;
+  const sf    = document.getElementById('elecSuc').value;
+  const el    = document.getElementById('elecContent');
+  if (!fecha) { el.innerHTML = '<div class="empty">Seleccioná una fecha</div>'; return; }
+  el.innerHTML = '<div class="empty">🔄 Cargando desde Firebase...</div>';
+  try {
+    const {db, collection, getDocs} = window._fb;
+    const snap = await getDocs(collection(db, 'eleccionesForm'));
+    const rows = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      const nombre = d.nombre || doc.id;
+      const elecs  = d.elecciones || {};
+      if (elecs[fecha]) {
+        const e = elecs[fecha];
+        if (sf && e.sucursal !== sf) return;
+        rows.push({ nombre, menu: e.menu, sucursal: e.sucursal, sucNombre: getSucNombre(e.sucursal) });
+      }
+    });
+    if (!rows.length) { el.innerHTML = '<div class="empty">Sin elecciones para esa fecha</div>'; return; }
+    rows.sort((a,b) => a.sucNombre.localeCompare(b.sucNombre));
+    // resumen por sucursal
+    const bySuc = {};
+    rows.forEach(r => { bySuc[r.sucNombre] = (bySuc[r.sucNombre]||0)+1; });
+    let h = '<div class="sumCards">';
+    h += '<div class="sCard"><div class="sl">Total pedidos</div><div class="sv">' + rows.length + '</div><div class="ss">personas</div></div>';
+    Object.entries(bySuc).forEach(([s,c]) => {
+      const suc = DB.sucursales.find(x=>x.nombre===s);
+      h += '<div class="sCard"><div class="sl">'+(suc?suc.emoji:'')+' '+s+'</div><div class="sv">'+c+'</div><div class="ss">pedidos</div></div>';
+    });
+    h += '</div>';
+    h += '<div class="tblWrap"><table class="tbl"><thead><tr><th>Empleado</th><th>Sucursal</th><th>Menú elegido</th></tr></thead><tbody>';
+    rows.forEach(r => {
+      const suc = DB.sucursales.find(x=>x.id===r.sucursal);
+      h += '<tr><td>'+r.nombre+'</td><td>'+(suc?suc.emoji:'')+' '+r.sucNombre+'</td><td>'+r.menu+'</td></tr>';
+    });
+    h += '</tbody></table></div>';
+    el.innerHTML = h;
+  } catch(err) {
+    el.innerHTML = '<div class="empty">❌ Error al cargar: '+err.message+'</div>';
+  }
+}
+
+async function exportElecciones() {
+  const fecha = document.getElementById('elecDate').value;
+  const sf    = document.getElementById('elecSuc').value;
+  if (!fecha) return alert('Seleccioná una fecha');
+  try {
+    const {db, collection, getDocs} = window._fb;
+    const snap = await getDocs(collection(db, 'eleccionesForm'));
+    const rows = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      const nombre = d.nombre || doc.id;
+      const elecs  = d.elecciones || {};
+      if (elecs[fecha]) {
+        const e = elecs[fecha];
+        if (sf && e.sucursal !== sf) return;
+        rows.push([nombre, getSucNombre(e.sucursal), e.menu]);
+      }
+    });
+    rows.sort((a,b) => a[1].localeCompare(b[1]));
+    const wb = XLSX.utils.book_new();
+    const ws = [['Elecciones del Formulario – Viandas Leno'],['Fecha:', fecha],[],['Empleado','Sucursal','Menú elegido'], ...rows, [], ['Total:', rows.length+' pedidos']];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ws), 'Elecciones');
+    XLSX.writeFile(wb, 'Elecciones_'+fecha+'.xlsx');
+  } catch(err) { alert('Error: '+err.message); }
+}
+
+function getSucNombre(id) {
+  const s = DB.sucursales.find(x=>x.id===id);
+  return s ? s.nombre : (id||'Desconocida');
+}
+
 // Exponer al scope global (necesario por ES modules de Firebase)
 window.doLogin=doLogin;window.doLogout=doLogout;window.showPage=showPage;
 window.selectSuc=selectSuc;
@@ -898,6 +988,7 @@ window.addSemana=addSemana;window.delSem=delSem;window.updDia=updDia;
 window.renderDiario=renderDiario;window.exportDiario=exportDiario;
 window.renderMensual=renderMensual;window.exportMensual=exportMensual;
 window.addSucursal=addSucursal;window.changePass=changePass;
+window.renderElecciones=renderElecciones;window.exportElecciones=exportElecciones;
 </script>
 </body>
 </html>
