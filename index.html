@@ -755,124 +755,172 @@ function updDia(si,di,v){DB.semanas[si].dias[di]=v.trim()||null;save();}
 // ══════════════════════════════════════════════
 //  INFORMES
 // ══════════════════════════════════════════════
-function getDiario(f,sf){
-  const rows=[],sucs=sf?DB.sucursales.filter(s=>s.id===sf):DB.sucursales,dd=DB.registros[f]||{};
-  sucs.forEach(s=>{const sd=dd[s.id]||{};DB.viandas.forEach(v=>{const c=sd[v]||0;if(c>0)rows.push({sucursal:s.nombre,emoji:s.emoji,vianda:v,cantidad:c});});});
-  return rows;
-}
-function getAsistDia(f,sf){
-  const asist=DB.asistencia[f]||{},rows=[];
-  DB.empleados.forEach(emp=>{
-    if(!asist[emp.id])return;
-    const s=DB.sucursales.find(x=>x.id===emp.sucId);if(!s)return;
-    if(sf&&s.id!==sf)return;
-    rows.push({nombre:emp.nombre,sucursal:s.nombre,emoji:s.emoji});
+// ── Leer eleccionesForm de Firebase y armar filas para informes ──
+async function getEleccionesFirebase() {
+  const {db, collection, getDocs} = window._fb;
+  const snap = await getDocs(collection(db, 'eleccionesForm'));
+  const rows = [];
+  snap.forEach(doc => {
+    const d = doc.data();
+    const nombre   = d.nombre || doc.id;
+    const elecs    = d.elecciones || {};
+    Object.entries(elecs).forEach(([fecha, elec]) => {
+      const suc = DB.sucursales.find(x => x.id === elec.sucursal);
+      rows.push({
+        fecha,
+        nombre,
+        menu:       elec.menu     || '—',
+        sucId:      elec.sucursal || 'desconocida',
+        sucursal:   suc ? suc.nombre : (elec.sucursal || 'Desconocida'),
+        emoji:      suc ? suc.emoji  : '❓'
+      });
+    });
   });
   return rows;
 }
-function renderDiario(){
-  const f=document.getElementById('rDDate').value,sf=document.getElementById('rDSuc').value;
-  const rows=getDiario(f,sf),asist=getAsistDia(f,sf),el=document.getElementById('diarioContent'),mh=getMenuDia(f);
-  if(!rows.length&&!asist.length){el.innerHTML='<div class="empty">Sin registros para esa fecha</div>';return;}
-  const tot=rows.reduce((a,r)=>a+r.cantidad,0);
-  const bySuc={};rows.forEach(r=>bySuc[r.sucursal]=(bySuc[r.sucursal]||0)+r.cantidad);
-  let h='';
-  if(mh)h+=`<div style="background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:13px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span style="font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.7px">Menú del día</span><span style="font-weight:700;color:var(--acc)">${mh}</span></div>`;
-  h+=`<div class="sumCards"><div class="sCard"><div class="sl">Total viandas</div><div class="sv">${tot}</div><div class="ss">unidades</div></div><div class="sCard"><div class="sl">Personal confirmado</div><div class="sv">${asist.length}</div><div class="ss">empleados</div></div>`;
-  Object.entries(bySuc).forEach(([s,c])=>{const sd=DB.sucursales.find(x=>x.nombre===s);h+=`<div class="sCard"><div class="sl">${sd?.emoji||''} ${s}</div><div class="sv">${c}</div><div class="ss">viandas</div></div>`;});
-  h+='</div>';
-  if(rows.length){
-    h+=`<div style="margin-bottom:22px"><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">📦 Viandas enviadas</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Sucursal</th><th>Vianda</th><th>Cantidad</th></tr></thead><tbody>`;
-    rows.forEach(r=>h+=`<tr><td>${r.emoji} ${r.sucursal}</td><td>${r.vianda}</td><td><span class="bO">${r.cantidad}</span></td></tr>`);
-    h+=`<tr class="tot"><td colspan="2">TOTAL</td><td>${tot}</td></tr></tbody></table></div></div>`;
-  }
-  if(asist.length){
-    h+=`<div><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">✅ Personal con vianda</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Empleado</th><th>Sucursal</th></tr></thead><tbody>`;
-    asist.forEach(a=>h+=`<tr><td>${a.nombre}</td><td>${a.emoji} ${a.sucursal}</td></tr>`);
-    h+=`</tbody></table></div></div>`;
-  }
-  el.innerHTML=h;
-}
-function exportDiario(){
-  const f=document.getElementById('rDDate').value,sf=document.getElementById('rDSuc').value;
-  const rows=getDiario(f,sf),asist=getAsistDia(f,sf),mh=getMenuDia(f);
-  const wb=XLSX.utils.book_new();
-  const w1=[['Informe Diario – Viandas Leno'],['Fecha:',f],['Menú del día:',mh||'—'],[],['Sucursal','Vianda','Cantidad']];
-  rows.forEach(r=>w1.push([r.sucursal,r.vianda,r.cantidad]));
-  w1.push(['','TOTAL',rows.reduce((a,r)=>a+r.cantidad,0)]);
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w1),'Viandas');
-  const w2=[['Personal con Vianda – '+f],[],['Empleado','Sucursal']];
-  asist.forEach(a=>w2.push([a.nombre,a.sucursal]));
-  w2.push([],[`Total: ${asist.length} empleados`]);
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w2),'Personal');
-  XLSX.writeFile(wb,`Viandas_Leno_Diario_${f}.xlsx`);
-}
-function getMensual(mes,sf){
-  const rows=[],sucs=sf?DB.sucursales.filter(s=>s.id===sf):DB.sucursales;
-  Object.keys(DB.registros).filter(f=>f.startsWith(mes)).sort().forEach(f=>{
-    const dd=DB.registros[f];sucs.forEach(s=>{const sd=dd[s.id]||{};DB.viandas.forEach(v=>{const c=sd[v]||0;if(c>0)rows.push({fecha:f,sucursal:s.nombre,emoji:s.emoji,vianda:v,cantidad:c});});});
-  });return rows;
-}
-function getAsistMes(mes,sf){
-  const rows=[];
-  Object.keys(DB.asistencia).filter(f=>f.startsWith(mes)).sort().forEach(f=>{
-    const asist=DB.asistencia[f]||{};
-    DB.empleados.forEach(emp=>{
-      if(!asist[emp.id])return;
-      const s=DB.sucursales.find(x=>x.id===emp.sucId);if(!s)return;
-      if(sf&&s.id!==sf)return;
-      rows.push({fecha:f,nombre:emp.nombre,sucursal:s.nombre,emoji:s.emoji});
+
+async function renderDiario() {
+  const f  = document.getElementById('rDDate').value;
+  const sf = document.getElementById('rDSuc').value;
+  const el = document.getElementById('diarioContent');
+  const mh = getMenuDia(f);
+  el.innerHTML = '<div class="empty">🔄 Cargando desde Firebase...</div>';
+  try {
+    const todas = await getEleccionesFirebase();
+    let rows = todas.filter(r => r.fecha === f);
+    if (sf) rows = rows.filter(r => r.sucId === sf);
+    rows.sort((a,b) => a.sucursal.localeCompare(b.sucursal));
+    if (!rows.length) { el.innerHTML = '<div class="empty">Sin registros para esa fecha</div>'; return; }
+    const bySuc = {}, byMenu = {};
+    rows.forEach(r => {
+      bySuc[r.sucursal]  = (bySuc[r.sucursal]  || 0) + 1;
+      byMenu[r.menu]     = (byMenu[r.menu]      || 0) + 1;
     });
-  });return rows;
-}
-function renderMensual(){
-  const mes=document.getElementById('rMMonth').value,sf=document.getElementById('rMSuc').value;
-  const rows=getMensual(mes,sf),asist=getAsistMes(mes,sf),el=document.getElementById('mensualContent');
-  if(!rows.length&&!asist.length){el.innerHTML='<div class="empty">Sin registros para ese mes</div>';return;}
-  const tot=rows.reduce((a,r)=>a+r.cantidad,0);
-  const bySuc={},byV={};
-  rows.forEach(r=>{bySuc[r.sucursal]=(bySuc[r.sucursal]||0)+r.cantidad;byV[r.vianda]=(byV[r.vianda]||0)+r.cantidad;});
-  let h=`<div class="sumCards"><div class="sCard"><div class="sl">Total viandas</div><div class="sv">${tot}</div><div class="ss">en el mes</div></div>`;
-  h+=`<div class="sCard"><div class="sl">Días registrados</div><div class="sv">${new Set(rows.map(r=>r.fecha)).size}</div><div class="ss">días</div></div>`;
-  h+=`<div class="sCard"><div class="sl">Personal activo</div><div class="sv">${new Set(asist.map(a=>a.nombre)).size}</div><div class="ss">personas</div></div>`;
-  Object.entries(bySuc).forEach(([s,c])=>{const sd=DB.sucursales.find(x=>x.nombre===s);h+=`<div class="sCard"><div class="sl">${sd?.emoji||''} ${s}</div><div class="sv">${c}</div><div class="ss">viandas</div></div>`;});
-  h+='</div>';
-  if(rows.length){
-    h+=`<div style="margin-bottom:22px"><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">📋 Detalle diario</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Fecha</th><th>Sucursal</th><th>Vianda</th><th>Cant.</th></tr></thead><tbody>`;
-    rows.forEach(r=>h+=`<tr><td><span class="bB">${fmtDate(r.fecha)}</span></td><td>${r.emoji} ${r.sucursal}</td><td>${r.vianda}</td><td><span class="bO">${r.cantidad}</span></td></tr>`);
-    h+=`<tr class="tot"><td colspan="3">TOTAL</td><td>${tot}</td></tr></tbody></table></div></div>`;
+    let h = '';
+    if (mh) h += `<div style="background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:13px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span style="font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.7px">Menú del día</span><span style="font-weight:700;color:var(--acc)">${mh}</span></div>`;
+    h += `<div class="sumCards">`;
+    h += `<div class="sCard"><div class="sl">Total pedidos</div><div class="sv">${rows.length}</div><div class="ss">viandas</div></div>`;
+    Object.entries(bySuc).forEach(([s,c]) => {
+      const sd = DB.sucursales.find(x => x.nombre === s);
+      h += `<div class="sCard"><div class="sl">${sd?.emoji||''} ${s}</div><div class="sv">${c}</div><div class="ss">pedidos</div></div>`;
+    });
+    h += '</div>';
+    // Tabla detalle por empleado
+    h += `<div style="margin-bottom:22px"><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">👤 Detalle por empleado</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Empleado</th><th>Sucursal</th><th>Menú elegido</th></tr></thead><tbody>`;
+    rows.forEach(r => h += `<tr><td>${r.nombre}</td><td>${r.emoji} ${r.sucursal}</td><td>${r.menu}</td></tr>`);
+    h += `<tr class="tot"><td colspan="2">TOTAL</td><td>${rows.length} pedidos</td></tr></tbody></table></div></div>`;
+    // Tabla resumen por menú
+    h += `<div><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">🍽 Resumen por menú</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Menú</th><th>Cantidad</th></tr></thead><tbody>`;
+    Object.entries(byMenu).sort((a,b)=>b[1]-a[1]).forEach(([m,c]) => h += `<tr><td>${m}</td><td><span class="bO">${c}</span></td></tr>`);
+    h += `<tr class="tot"><td>TOTAL</td><td>${rows.length}</td></tr></tbody></table></div></div>`;
+    el.innerHTML = h;
+  } catch(err) {
+    el.innerHTML = `<div class="empty">❌ Error: ${err.message}</div>`;
   }
-  h+=`<div style="margin-bottom:22px"><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">🍽 Por Vianda</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Vianda</th><th>Total</th></tr></thead><tbody>`;
-  Object.entries(byV).sort((a,b)=>b[1]-a[1]).forEach(([v,c])=>h+=`<tr><td>${v}</td><td><span class="bG">${c}</span></td></tr>`);
-  h+=`<tr class="tot"><td>TOTAL</td><td>${tot}</td></tr></tbody></table></div></div>`;
-  if(asist.length){
-    const byEmp={};
-    asist.forEach(a=>{if(!byEmp[a.nombre])byEmp[a.nombre]={nombre:a.nombre,sucursal:a.sucursal,emoji:a.emoji,dias:0};byEmp[a.nombre].dias++;});
-    h+=`<div><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">👥 Viandas por empleado</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Empleado</th><th>Sucursal</th><th>Días</th></tr></thead><tbody>`;
-    Object.values(byEmp).sort((a,b)=>b.dias-a.dias).forEach(e=>h+=`<tr><td>${e.nombre}</td><td>${e.emoji} ${e.sucursal}</td><td><span class="bO">${e.dias}</span></td></tr>`);
-    h+=`</tbody></table></div></div>`;
-  }
-  el.innerHTML=h;
 }
-function exportMensual(){
-  const mes=document.getElementById('rMMonth').value,sf=document.getElementById('rMSuc').value;
-  const rows=getMensual(mes,sf),asist=getAsistMes(mes,sf);
-  const wb=XLSX.utils.book_new();
-  const w1=[['Informe Mensual – Viandas Leno'],['Mes:',mes],[],['Fecha','Sucursal','Vianda','Cantidad']];
-  rows.forEach(r=>w1.push([r.fecha,r.sucursal,r.vianda,r.cantidad]));
-  w1.push(['','','TOTAL',rows.reduce((a,r)=>a+r.cantidad,0)]);
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w1),'Detalle');
-  const bySuc={};rows.forEach(r=>bySuc[r.sucursal]=(bySuc[r.sucursal]||0)+r.cantidad);
-  const w2=[['Sucursal','Total']];Object.entries(bySuc).forEach(([s,c])=>w2.push([s,c]));
-  w2.push(['TOTAL',rows.reduce((a,r)=>a+r.cantidad,0)]);
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w2),'Por Sucursal');
-  const byV={};rows.forEach(r=>byV[r.vianda]=(byV[r.vianda]||0)+r.cantidad);
-  const w3=[['Vianda','Total']];Object.entries(byV).sort((a,b)=>b[1]-a[1]).forEach(([v,c])=>w3.push([v,c]));
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w3),'Por Vianda');
-  const byEmp={};asist.forEach(a=>{if(!byEmp[a.nombre])byEmp[a.nombre]={nombre:a.nombre,sucursal:a.sucursal,dias:0};byEmp[a.nombre].dias++;});
-  const w4=[['Empleado','Sucursal','Días con vianda']];
-  Object.values(byEmp).sort((a,b)=>b.dias-a.dias).forEach(e=>w4.push([e.nombre,e.sucursal,e.dias]));
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(w4),'Personal');
+
+async function exportDiario() {
+  const f  = document.getElementById('rDDate').value;
+  const sf = document.getElementById('rDSuc').value;
+  const mh = getMenuDia(f);
+  try {
+    const todas = await getEleccionesFirebase();
+    let rows = todas.filter(r => r.fecha === f);
+    if (sf) rows = rows.filter(r => r.sucId === sf);
+    rows.sort((a,b) => a.sucursal.localeCompare(b.sucursal));
+    const wb = XLSX.utils.book_new();
+    const w1 = [['Informe Diario – Viandas Leno'],['Fecha:', f],['Menú del día:', mh||'—'],[],['Empleado','Sucursal','Menú elegido']];
+    rows.forEach(r => w1.push([r.nombre, r.sucursal, r.menu]));
+    w1.push([],['Total:', rows.length + ' pedidos']);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(w1), 'Detalle');
+    const byMenu = {};
+    rows.forEach(r => byMenu[r.menu] = (byMenu[r.menu]||0)+1);
+    const w2 = [['Menú','Cantidad']];
+    Object.entries(byMenu).sort((a,b)=>b[1]-a[1]).forEach(([m,c])=>w2.push([m,c]));
+    w2.push(['TOTAL', rows.length]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(w2), 'Por Menú');
+    XLSX.writeFile(wb, `Viandas_Leno_Diario_${f}.xlsx`);
+  } catch(err) { alert('Error: ' + err.message); }
+}
+
+async function renderMensual() {
+  const mes = document.getElementById('rMMonth').value;
+  const sf  = document.getElementById('rMSuc').value;
+  const el  = document.getElementById('mensualContent');
+  el.innerHTML = '<div class="empty">🔄 Cargando desde Firebase...</div>';
+  try {
+    const todas = await getEleccionesFirebase();
+    let rows = todas.filter(r => r.fecha.startsWith(mes));
+    if (sf) rows = rows.filter(r => r.sucId === sf);
+    rows.sort((a,b) => a.fecha.localeCompare(b.fecha) || a.sucursal.localeCompare(b.sucursal));
+    if (!rows.length) { el.innerHTML = '<div class="empty">Sin registros para ese mes</div>'; return; }
+    const bySuc = {}, byMenu = {}, byEmp = {}, fechas = new Set();
+    rows.forEach(r => {
+      bySuc[r.sucursal]  = (bySuc[r.sucursal]  || 0) + 1;
+      byMenu[r.menu]     = (byMenu[r.menu]      || 0) + 1;
+      fechas.add(r.fecha);
+      if (!byEmp[r.nombre]) byEmp[r.nombre] = { nombre:r.nombre, sucursal:r.sucursal, emoji:r.emoji, dias:0 };
+      byEmp[r.nombre].dias++;
+    });
+    let h = `<div class="sumCards">`;
+    h += `<div class="sCard"><div class="sl">Total pedidos</div><div class="sv">${rows.length}</div><div class="ss">en el mes</div></div>`;
+    h += `<div class="sCard"><div class="sl">Días con pedidos</div><div class="sv">${fechas.size}</div><div class="ss">días</div></div>`;
+    h += `<div class="sCard"><div class="sl">Empleados</div><div class="sv">${Object.keys(byEmp).length}</div><div class="ss">personas</div></div>`;
+    Object.entries(bySuc).forEach(([s,c]) => {
+      const sd = DB.sucursales.find(x => x.nombre === s);
+      h += `<div class="sCard"><div class="sl">${sd?.emoji||''} ${s}</div><div class="sv">${c}</div><div class="ss">pedidos</div></div>`;
+    });
+    h += '</div>';
+    // Detalle diario
+    h += `<div style="margin-bottom:22px"><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">📋 Detalle por día</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Fecha</th><th>Empleado</th><th>Sucursal</th><th>Menú elegido</th></tr></thead><tbody>`;
+    rows.forEach(r => h += `<tr><td><span class="bB">${fmtDate(r.fecha)}</span></td><td>${r.nombre}</td><td>${r.emoji} ${r.sucursal}</td><td>${r.menu}</td></tr>`);
+    h += `<tr class="tot"><td colspan="3">TOTAL</td><td>${rows.length} pedidos</td></tr></tbody></table></div></div>`;
+    // Por menú
+    h += `<div style="margin-bottom:22px"><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">🍽 Por menú</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Menú</th><th>Total</th></tr></thead><tbody>`;
+    Object.entries(byMenu).sort((a,b)=>b[1]-a[1]).forEach(([m,c]) => h += `<tr><td>${m}</td><td><span class="bG">${c}</span></td></tr>`);
+    h += `<tr class="tot"><td>TOTAL</td><td>${rows.length}</td></tr></tbody></table></div></div>`;
+    // Por empleado
+    h += `<div><div style="font-weight:600;margin-bottom:10px;font-size:.9rem">👥 Por empleado</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Empleado</th><th>Sucursal</th><th>Días</th></tr></thead><tbody>`;
+    Object.values(byEmp).sort((a,b)=>b.dias-a.dias).forEach(e => h += `<tr><td>${e.nombre}</td><td>${e.emoji} ${e.sucursal}</td><td><span class="bO">${e.dias}</span></td></tr>`);
+    h += `</tbody></table></div></div>`;
+    el.innerHTML = h;
+  } catch(err) {
+    el.innerHTML = `<div class="empty">❌ Error: ${err.message}</div>`;
+  }
+}
+
+async function exportMensual() {
+  const mes = document.getElementById('rMMonth').value;
+  const sf  = document.getElementById('rMSuc').value;
+  try {
+    const todas = await getEleccionesFirebase();
+    let rows = todas.filter(r => r.fecha.startsWith(mes));
+    if (sf) rows = rows.filter(r => r.sucId === sf);
+    rows.sort((a,b) => a.fecha.localeCompare(b.fecha));
+    const wb = XLSX.utils.book_new();
+    const w1 = [['Informe Mensual – Viandas Leno'],['Mes:', mes],[],['Fecha','Empleado','Sucursal','Menú elegido']];
+    rows.forEach(r => w1.push([r.fecha, r.nombre, r.sucursal, r.menu]));
+    w1.push([],['Total:', rows.length + ' pedidos']);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(w1), 'Detalle');
+    const bySuc = {};
+    rows.forEach(r => bySuc[r.sucursal] = (bySuc[r.sucursal]||0)+1);
+    const w2 = [['Sucursal','Total']];
+    Object.entries(bySuc).forEach(([s,c]) => w2.push([s,c]));
+    w2.push(['TOTAL', rows.length]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(w2), 'Por Sucursal');
+    const byMenu = {};
+    rows.forEach(r => byMenu[r.menu] = (byMenu[r.menu]||0)+1);
+    const w3 = [['Menú','Total']];
+    Object.entries(byMenu).sort((a,b)=>b[1]-a[1]).forEach(([m,c]) => w3.push([m,c]));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(w3), 'Por Menú');
+    const byEmp = {};
+    rows.forEach(r => { if(!byEmp[r.nombre]) byEmp[r.nombre]={nombre:r.nombre,sucursal:r.sucursal,dias:0}; byEmp[r.nombre].dias++; });
+    const w4 = [['Empleado','Sucursal','Días con vianda']];
+    Object.values(byEmp).sort((a,b)=>b.dias-a.dias).forEach(e => w4.push([e.nombre, e.sucursal, e.dias]));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(w4), 'Por Empleado');
+    XLSX.writeFile(wb, `Viandas_Leno_Mensual_${mes}.xlsx`);
+  } catch(err) { alert('Error: ' + err.message); }
+}
   XLSX.writeFile(wb,`Viandas_Leno_Mensual_${mes}.xlsx`);
 }
 
