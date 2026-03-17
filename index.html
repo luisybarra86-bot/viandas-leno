@@ -437,7 +437,10 @@ let fb, saveTimer = null;
 async function fbLoad() {
   const {db, doc, getDoc} = window._fb;
   try {
-    const snap = await getDoc(doc(db, 'app', 'data'));
+    const snap = await Promise.race([
+      getDoc(doc(db, 'app', 'data')),
+      new Promise((_,reject) => setTimeout(()=>reject(new Error('timeout')), 5000))
+    ]);
     if (snap.exists()) {
       const remote = snap.data();
       // Merge: datos remotos toman precedencia, defaults como fallback
@@ -509,8 +512,9 @@ setTimeout(() => {
     document.getElementById('loader').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
     setSyncBadge('err');
+    console.warn('Firebase timeout - verificar reglas de Firestore');
   }
-}, 6000);
+}, 4000);
 
 // ══════════════════════════════════════════════
 //  AUTH
@@ -920,8 +924,6 @@ async function exportMensual() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(w4), 'Por Empleado');
     XLSX.writeFile(wb, `Viandas_Leno_Mensual_${mes}.xlsx`);
   } catch(err) { alert('Error: ' + err.message); }
-}
-  XLSX.writeFile(wb,`Viandas_Leno_Mensual_${mes}.xlsx`);
 }
 
 // ══════════════════════════════════════════════
