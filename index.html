@@ -2224,6 +2224,9 @@ async function sincronizarPreciosDesdeBase(){
     const stateData = stateSnap.data();
     const activeMes = stateData.activeMes;
     const historial = stateData.historial || [];
+    console.log("activeMes:", activeMes, "total historial:", historial.length);
+    console.log("primeros 5:", historial.slice(0,5));
+    console.log("items VIANDAS:", historial.filter(i => i.sucursal === "VIANDAS").length);
     // Filtrar solo items de VIANDAS y construir mapa nombre → {precio, categoria, unidad}
     const ORDEN_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const itemsViandas = historial.filter(item => (item.sucursal||'').toUpperCase().trim() === 'VIANDAS');
