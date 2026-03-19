@@ -551,6 +551,116 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .cfgRow .suc-cnt{font-size:.72rem;color:var(--muted);font-weight:500}
 
 /* ═══════════════════════════════════════════════
+   MÓDULO COSTOS — INSUMOS & RECETAS
+═══════════════════════════════════════════════ */
+
+/* Badges de categoría */
+.cat-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.69rem;font-weight:600;white-space:nowrap}
+.cat-pollo      {background:#fff3e0;color:#e65100}
+.cat-carne      {background:#fce4ec;color:#b71c1c}
+.cat-milanesa   {background:#ffe0b2;color:#bf360c}
+.cat-verduras   {background:#e8f5e9;color:#1b5e20}
+.cat-pastas     {background:#fffde7;color:#f57f17}
+.cat-lacteos    {background:#e3f2fd;color:#0d47a1}
+.cat-aceite     {background:#f3e5f5;color:#4a148c}
+.cat-descartable{background:#efebe9;color:#4e342e}
+.cat-otro       {background:#eceff1;color:#37474f}
+
+/* Tabla de insumos */
+.ins-actions{display:flex;gap:6px;align-items:center}
+.btn-sm{
+  padding:5px 11px;border-radius:7px;font-size:.72rem;font-weight:600;
+  border:none;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.btn-sm-edit{background:#EBF5FB;color:#1a5276}
+.btn-sm-edit:hover{background:#AED6F1;color:#1a5276}
+.btn-sm-del{background:#FDEDEC;color:#922B21}
+.btn-sm-del:hover{background:#F1948A;color:#fff}
+.btn-sm-hist{background:#F0F3F4;color:#566573}
+.btn-sm-hist:hover{background:#D5D8DC;color:#2c3e50}
+
+/* Panel historial desplegable */
+.hist-panel{
+  display:none;background:#FAFAFA;border-top:1px solid var(--border);
+  padding:12px 16px;
+}
+.hist-panel.open{display:block}
+.hist-row{
+  display:flex;align-items:center;gap:10px;padding:5px 0;
+  border-bottom:1px solid var(--border);font-size:.78rem;color:var(--muted);
+}
+.hist-row:last-child{border-bottom:none}
+.hist-arrow{color:var(--primary);font-weight:700}
+
+/* Modal overlay */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.45);z-index:500;
+  align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex}
+.modal-box{
+  background:#fff;border-radius:20px;
+  padding:32px;width:480px;max-width:94vw;
+  box-shadow:0 24px 64px rgba(0,0,0,.2);
+  animation:loginIn .3s cubic-bezier(.22,1,.36,1);
+  max-height:90vh;overflow-y:auto;
+}
+.modal-title{font-size:1.05rem;font-weight:700;margin-bottom:22px;color:var(--text);display:flex;align-items:center;gap:10px}
+.modal-footer{display:flex;gap:10px;margin-top:24px;justify-content:flex-end}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%}
+.form-group textarea{height:72px;resize:vertical}
+
+/* Cards de recetas */
+.recetas-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px}
+.receta-card{
+  background:#fff;border:1.5px solid var(--border);border-radius:14px;
+  padding:18px;box-shadow:var(--shadow);transition:all .18s;
+}
+.receta-card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.receta-nombre{font-weight:700;font-size:.95rem;color:var(--text);margin-bottom:6px}
+.receta-ing-cnt{font-size:.75rem;color:var(--muted);margin-bottom:10px}
+.receta-costo{font-size:1.5rem;font-weight:800;color:var(--primary);margin-bottom:12px}
+.receta-costo-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.receta-actions{display:flex;gap:8px}
+
+/* Formulario receta — tabla ingredientes */
+.ing-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:10px}
+.ing-table th{background:var(--secondary);color:#fff;padding:9px 10px;text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px}
+.ing-table th:first-child{border-radius:8px 0 0 0}
+.ing-table th:last-child{border-radius:0 8px 0 0}
+.ing-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.ing-table tr:last-child td{border-bottom:none}
+.ing-table select,.ing-table input[type=number]{padding:6px 10px;font-size:.8rem;border-radius:7px}
+
+/* Resumen costo receta */
+.costo-resumen{
+  background:linear-gradient(135deg,#FFF3EE,#FFF8F5);
+  border:1.5px solid rgba(232,82,26,.2);border-radius:12px;
+  padding:16px 20px;margin-top:16px;
+}
+.costo-resumen-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:.83rem;color:var(--muted)}
+.costo-resumen-total{
+  display:flex;justify-content:space-between;align-items:center;
+  padding-top:10px;margin-top:8px;border-top:1.5px solid rgba(232,82,26,.25);
+}
+.costo-total-label{font-size:.85rem;font-weight:700;color:var(--text)}
+.costo-total-valor{font-size:1.6rem;font-weight:800;color:#E8521A}
+
+/* Header sección con botón a la derecha */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+
+@media(max-width:768px){
+  .recetas-grid{grid-template-columns:1fr}
+  .modal-box{padding:22px}
+}
+@media(max-width:480px){
+  .recetas-grid{grid-template-columns:1fr}
+}
+
+/* ═══════════════════════════════════════════════
    TOAST NOTIFICATIONS
 ═══════════════════════════════════════════════ */
 #toastContainer{
@@ -667,6 +777,12 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
         </button>
         <button class="tab" onclick="showPage('menus',this)">
           <span class="tab-dot"></span><span class="nav-icon">📅</span> Menú Semanal
+        </button>
+        <button class="tab tab-admin" onclick="showPage('insumos',this)">
+          <span class="tab-dot"></span><span class="nav-icon">📦</span> Insumos
+        </button>
+        <button class="tab tab-admin" onclick="showPage('recetas',this)">
+          <span class="tab-dot"></span><span class="nav-icon">🍽</span> Recetas
         </button>
         <hr class="nav-divider">
         <div class="nav-group-label">Informes</div>
@@ -844,10 +960,119 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
           </div>
         </div>
 
+        <!-- ── INSUMOS ── -->
+        <div id="page-insumos" class="page">
+          <div class="section-header">
+            <div class="page-title" style="margin-bottom:0"><span class="title-icon-box">📦</span> Gestión de <span class="accent">Insumos</span></div>
+            <button class="btnA" onclick="abrirModalInsumo()">+ Agregar insumo</button>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <div class="tblWrap" style="border:none;box-shadow:none;border-radius:0">
+              <table class="tbl" id="insumosTable">
+                <thead><tr>
+                  <th>Nombre</th><th>Categoría</th><th>Unidad</th><th>Costo unitario</th><th>Actualizado</th><th>Acciones</th>
+                </tr></thead>
+                <tbody id="insumosBody">
+                  <tr><td colspan="6" class="empty">Cargando insumos...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RECETAS ── -->
+        <div id="page-recetas" class="page">
+          <div class="section-header">
+            <div class="page-title" style="margin-bottom:0"><span class="title-icon-box">🍽</span> Gestión de <span class="accent">Recetas</span></div>
+            <button class="btnA" onclick="abrirFormReceta()">+ Nueva receta</button>
+          </div>
+          <div id="recetasGrid" class="recetas-grid">
+            <div style="grid-column:1/-1" class="empty">Cargando recetas...</div>
+          </div>
+          <!-- Panel formulario receta (inline, toggle) -->
+          <div id="recetaForm" class="card" style="display:none;margin-top:8px">
+            <div class="modal-title" id="recetaFormTitle">📝 Nueva receta</div>
+            <div class="form-group">
+              <label>Nombre de la receta</label>
+              <input type="text" id="recNombre" placeholder="Ej: Milanesa Napolitana">
+            </div>
+            <div class="form-group">
+              <label>Descripción (opcional)</label>
+              <textarea id="recDesc" placeholder="Descripción breve..."></textarea>
+            </div>
+            <div style="margin-top:4px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <label style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600">Ingredientes</label>
+                <button class="btn-sm btn-sm-edit" onclick="agregarFilaIngrediente()">+ Ingrediente</button>
+              </div>
+              <table class="ing-table">
+                <thead><tr><th>Insumo</th><th>Cantidad</th><th>Unidad</th><th>Costo parcial</th><th></th></tr></thead>
+                <tbody id="ingTableBody"></tbody>
+              </table>
+            </div>
+            <div class="costo-resumen" id="costoResumen">
+              <div class="costo-resumen-row"><span>Subtotal alimentos</span><span id="subtotalAlimentos">$0</span></div>
+              <div class="costo-resumen-row"><span>Subtotal descartables</span><span id="subtotalDescartables">$0</span></div>
+              <div class="costo-resumen-total">
+                <span class="costo-total-label">💰 Costo total</span>
+                <span class="costo-total-valor" id="costoTotalValor">$0</span>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btnS" onclick="cerrarFormReceta()">Cancelar</button>
+              <button class="btnA" onclick="guardarReceta()">Guardar receta</button>
+            </div>
+          </div>
+        </div>
+
       </div><!-- /main -->
     </div><!-- /main-wrapper -->
   </div><!-- /app-layout -->
 </div><!-- /app -->
+
+<!-- MODAL INSUMO -->
+<div class="modal-overlay" id="modalInsumo">
+  <div class="modal-box">
+    <div class="modal-title" id="modalInsumoTitle">📦 Nuevo insumo</div>
+    <div class="form-group">
+      <label>Nombre del insumo</label>
+      <input type="text" id="insNombre" placeholder="Ej: Milanesa de pollo">
+    </div>
+    <div class="form-group">
+      <label>Categoría</label>
+      <select id="insCategoria">
+        <option value="Pollo">🍗 Pollo</option>
+        <option value="Carne vacuna">🥩 Carne vacuna</option>
+        <option value="Milanesa">🍖 Milanesa</option>
+        <option value="Verduras">🥦 Verduras</option>
+        <option value="Pastas">🍝 Pastas</option>
+        <option value="Lácteos">🧀 Lácteos</option>
+        <option value="Aceite/Condimentos">🫒 Aceite/Condimentos</option>
+        <option value="Descartables">📦 Descartables</option>
+        <option value="Otro">📌 Otro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Unidad de medida</label>
+      <select id="insUnidad">
+        <option value="kg">kg</option>
+        <option value="gramos">gramos</option>
+        <option value="litros">litros</option>
+        <option value="ml">ml</option>
+        <option value="unidad">unidad</option>
+        <option value="metro">metro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Costo por unidad ($)</label>
+      <input type="number" id="insCosto" placeholder="0" min="0" step="1">
+    </div>
+    <div class="modal-footer">
+      <button class="btnS" onclick="cerrarModalInsumo()">Cancelar</button>
+      <button class="btnA" onclick="guardarInsumo()">Guardar</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════
@@ -1084,6 +1309,11 @@ function doLogin() {
   if(u===DB.creds.user && p===DB.creds.pass) {
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
+    // Mostrar/ocultar secciones admin según usuario
+    const esAdmin = (u === DB.creds.user); // admin = único usuario configurado
+    document.querySelectorAll('.tab-admin').forEach(t=>{
+      t.style.display = esAdmin ? '' : 'none';
+    });
     initApp();
   } else {
     document.getElementById('lerr').style.display='block';
@@ -1115,6 +1345,8 @@ function showPage(id,btn){
   if(id==='empleados')renderEmpPage();
   if(id==='menus')renderMenuSem();
   if(id==='config')renderCfg();
+  if(id==='insumos'){ loadInsumos(); }
+  if(id==='recetas'){ loadInsumos().then(()=>loadRecetas()); }
   closeSidebar();
 }
 
@@ -1593,9 +1825,413 @@ function getSucNombre(id) {
   return s ? s.nombre : (id||'Desconocida');
 }
 
+// ══════════════════════════════════════════════
+//  MÓDULO COSTOS — INSUMOS
+// ══════════════════════════════════════════════
+let _insumos = [];       // cache local
+let _editInsumoId = null; // id en edición
+
+const CAT_COLORES = {
+  'Pollo':             'cat-pollo',
+  'Carne vacuna':      'cat-carne',
+  'Milanesa':          'cat-milanesa',
+  'Verduras':          'cat-verduras',
+  'Pastas':            'cat-pastas',
+  'Lácteos':           'cat-lacteos',
+  'Aceite/Condimentos':'cat-aceite',
+  'Descartables':      'cat-descartable',
+  'Otro':              'cat-otro',
+};
+
+const D_INSUMOS_EJEMPLO = [
+  {nombre:'Milanesa de pollo',   categoria:'Pollo',              unidad:'kg',     costo:8500},
+  {nombre:'Milanesa de carne',   categoria:'Carne vacuna',       unidad:'kg',     costo:12000},
+  {nombre:'Puré instantáneo',    categoria:'Pastas',             unidad:'kg',     costo:3200},
+  {nombre:'Arroz',               categoria:'Pastas',             unidad:'kg',     costo:2100},
+  {nombre:'Tomate',              categoria:'Verduras',           unidad:'kg',     costo:1800},
+  {nombre:'Queso mozzarella',    categoria:'Lácteos',            unidad:'kg',     costo:9500},
+  {nombre:'Aceite girasol',      categoria:'Aceite/Condimentos', unidad:'litros', costo:4200},
+  {nombre:'Bandeja descartable', categoria:'Descartables',       unidad:'unidad', costo:180},
+  {nombre:'Bolsa cierre',        categoria:'Descartables',       unidad:'unidad', costo:45},
+  {nombre:'Cubiertos descartables',categoria:'Descartables',     unidad:'unidad', costo:30},
+];
+
+function fmtPeso(n){return '$'+Number(n).toLocaleString('es-AR');}
+function nowISO(){return new Date().toISOString().slice(0,10);}
+
+async function loadInsumos(){
+  const {db, collection, getDocs} = window._fb;
+  try {
+    const snap = await getDocs(collection(db,'insumos'));
+    _insumos = [];
+    snap.forEach(d => _insumos.push({id:d.id, ...d.data()}));
+    // Si no hay insumos, cargar datos de ejemplo
+    if(!_insumos.length) await seedInsumos();
+    else renderInsumosTable();
+  } catch(e){ console.error('loadInsumos',e); }
+}
+
+async function seedInsumos(){
+  const {db, collection, doc, setDoc} = window._fb;
+  const col = collection(db,'insumos');
+  for(const ins of D_INSUMOS_EJEMPLO){
+    const ref = doc(col);
+    const data = {...ins, fechaActualizacion: nowISO()};
+    await setDoc(ref, data);
+    _insumos.push({id:ref.id, ...data});
+  }
+  renderInsumosTable();
+  // Cargar receta de ejemplo
+  await seedRecetaEjemplo();
+}
+
+function renderInsumosTable(){
+  const tbody = document.getElementById('insumosBody');
+  if(!tbody) return;
+  if(!_insumos.length){
+    tbody.innerHTML='<tr><td colspan="6" class="empty">No hay insumos. Agregá el primero.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _insumos.map(ins => {
+    const cc = CAT_COLORES[ins.categoria]||'cat-otro';
+    return `
+    <tr id="ins-row-${ins.id}">
+      <td><strong>${ins.nombre}</strong></td>
+      <td><span class="cat-badge ${cc}">${ins.categoria}</span></td>
+      <td>${ins.unidad}</td>
+      <td><strong>${fmtPeso(ins.costo)}</strong></td>
+      <td style="font-size:.75rem;color:var(--muted)">${ins.fechaActualizacion||'—'}</td>
+      <td>
+        <div class="ins-actions">
+          <button class="btn-sm btn-sm-edit" onclick="editarInsumo('${ins.id}')">✏ Editar</button>
+          <button class="btn-sm btn-sm-hist" onclick="toggleHistorial('${ins.id}')">📋 Historial</button>
+          <button class="btn-sm btn-sm-del" onclick="eliminarInsumo('${ins.id}')">✕</button>
+        </div>
+      </td>
+    </tr>
+    <tr id="ins-hist-${ins.id}" style="display:none">
+      <td colspan="6">
+        <div class="hist-panel open" id="hist-content-${ins.id}">Cargando...</div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleHistorial(id){
+  const row = document.getElementById(`ins-hist-${id}`);
+  if(!row) return;
+  const visible = row.style.display !== 'none';
+  row.style.display = visible ? 'none' : 'table-row';
+  if(!visible) cargarHistorial(id);
+}
+
+async function cargarHistorial(id){
+  const {db, collection, getDocs} = window._fb;
+  const el = document.getElementById(`hist-content-${id}`);
+  if(!el) return;
+  try {
+    const snap = await getDocs(collection(db,`insumos/${id}/historial`));
+    const hist = [];
+    snap.forEach(d => hist.push(d.data()));
+    hist.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+    const recientes = hist.slice(0,5);
+    if(!recientes.length){ el.innerHTML='<div style="font-size:.78rem;color:var(--muted);padding:4px">Sin historial de cambios.</div>'; return; }
+    el.innerHTML = recientes.map(h =>
+      `<div class="hist-row">
+        <span>${h.fecha}</span>
+        <span>${fmtPeso(h.costoAnterior)}</span>
+        <span class="hist-arrow">→</span>
+        <span style="color:var(--primary);font-weight:600">${fmtPeso(h.costoNuevo)}</span>
+      </div>`
+    ).join('');
+  } catch(e){ el.innerHTML='<div style="font-size:.78rem;color:var(--danger)">Error cargando historial.</div>'; }
+}
+
+function abrirModalInsumo(id=null){
+  _editInsumoId = id;
+  const titulo = document.getElementById('modalInsumoTitle');
+  if(id){
+    const ins = _insumos.find(i=>i.id===id);
+    if(!ins) return;
+    titulo.textContent = '✏ Editar insumo';
+    document.getElementById('insNombre').value = ins.nombre;
+    document.getElementById('insCategoria').value = ins.categoria;
+    document.getElementById('insUnidad').value = ins.unidad;
+    document.getElementById('insCosto').value = ins.costo;
+  } else {
+    titulo.textContent = '📦 Nuevo insumo';
+    document.getElementById('insNombre').value = '';
+    document.getElementById('insCategoria').value = 'Pollo';
+    document.getElementById('insUnidad').value = 'kg';
+    document.getElementById('insCosto').value = '';
+  }
+  document.getElementById('modalInsumo').classList.add('open');
+}
+
+function cerrarModalInsumo(){
+  document.getElementById('modalInsumo').classList.remove('open');
+  _editInsumoId = null;
+}
+
+async function guardarInsumo(){
+  const nombre = document.getElementById('insNombre').value.trim();
+  const categoria = document.getElementById('insCategoria').value;
+  const unidad = document.getElementById('insUnidad').value;
+  const costo = parseFloat(document.getElementById('insCosto').value)||0;
+  if(!nombre){ showToast('Ingresá el nombre del insumo','warn'); return; }
+  const {db, collection, doc, setDoc} = window._fb;
+  try {
+    if(_editInsumoId){
+      // Guardar historial si cambió el costo
+      const ins = _insumos.find(i=>i.id===_editInsumoId);
+      if(ins && ins.costo !== costo){
+        const histRef = doc(collection(db,`insumos/${_editInsumoId}/historial`));
+        await setDoc(histRef,{costoAnterior:ins.costo, costoNuevo:costo, fecha:nowISO()});
+      }
+      const data = {nombre, categoria, unidad, costo, fechaActualizacion:nowISO()};
+      await setDoc(doc(db,'insumos',_editInsumoId), data);
+      const idx = _insumos.findIndex(i=>i.id===_editInsumoId);
+      if(idx>=0) _insumos[idx] = {id:_editInsumoId, ...data};
+      showToast('✅ Insumo actualizado','success');
+    } else {
+      const ref = doc(collection(db,'insumos'));
+      const data = {nombre, categoria, unidad, costo, fechaActualizacion:nowISO()};
+      await setDoc(ref, data);
+      _insumos.push({id:ref.id, ...data});
+      showToast('✅ Insumo agregado','success');
+    }
+    cerrarModalInsumo();
+    renderInsumosTable();
+  } catch(e){ showToast('Error guardando insumo','error'); console.error(e); }
+}
+
+function editarInsumo(id){ abrirModalInsumo(id); }
+
+async function eliminarInsumo(id){
+  if(!confirm('¿Eliminar este insumo?')) return;
+  const {db, doc, deleteDoc} = window._fb;
+  try {
+    await deleteDoc(doc(db,'insumos',id));
+    _insumos = _insumos.filter(i=>i.id!==id);
+    renderInsumosTable();
+    showToast('Insumo eliminado','info');
+  } catch(e){ showToast('Error eliminando','error'); }
+}
+
+// ══════════════════════════════════════════════
+//  MÓDULO COSTOS — RECETAS
+// ══════════════════════════════════════════════
+let _recetas = [];
+let _editRecetaId = null;
+let _ingFilas = [];   // [{insumoId, cantidad}]
+
+async function loadRecetas(){
+  const {db, collection, getDocs} = window._fb;
+  try {
+    const snap = await getDocs(collection(db,'recetas'));
+    _recetas = [];
+    snap.forEach(d => _recetas.push({id:d.id, ...d.data()}));
+    renderRecetasGrid();
+  } catch(e){ console.error('loadRecetas',e); }
+}
+
+async function seedRecetaEjemplo(){
+  // Solo se llama desde seedInsumos cuando no hay datos
+  const ingredientesEj = [
+    {nombre:'Milanesa de pollo',     cantidad:0.25},
+    {nombre:'Tomate',                cantidad:0.05},
+    {nombre:'Queso mozzarella',      cantidad:0.05},
+    {nombre:'Aceite girasol',        cantidad:0.02},
+    {nombre:'Bandeja descartable',   cantidad:1},
+    {nombre:'Bolsa cierre',          cantidad:1},
+    {nombre:'Cubiertos descartables',cantidad:1},
+  ];
+  const ingredientes = ingredientesEj.map(ie=>{
+    const ins = _insumos.find(i=>i.nombre===ie.nombre);
+    if(!ins) return null;
+    return {insumoId:ins.id, nombre:ins.nombre, cantidad:ie.cantidad, unidad:ins.unidad, costoUnitario:ins.costo};
+  }).filter(Boolean);
+  const costoTotal = ingredientes.reduce((s,i)=>s+(i.costoUnitario*i.cantidad),0);
+  const {db, collection, doc, setDoc} = window._fb;
+  const ref = doc(collection(db,'recetas'));
+  const data = {nombre:'Milanesa Napolitana', descripcion:'', ingredientes, costoTotal, fechaCreacion:nowISO()};
+  await setDoc(ref, data);
+  _recetas.push({id:ref.id, ...data});
+  renderRecetasGrid();
+}
+
+function renderRecetasGrid(){
+  const g = document.getElementById('recetasGrid');
+  if(!g) return;
+  if(!_recetas.length){
+    g.innerHTML='<div style="grid-column:1/-1" class="empty">No hay recetas. Creá la primera.</div>';
+    return;
+  }
+  g.innerHTML = _recetas.map(r=>`
+    <div class="receta-card">
+      <div class="receta-nombre">${r.nombre}</div>
+      <div class="receta-ing-cnt">${(r.ingredientes||[]).length} ingredientes</div>
+      <div class="receta-costo-label">Costo por porción</div>
+      <div class="receta-costo">${fmtPeso(r.costoTotal||0)}</div>
+      <div class="receta-actions">
+        <button class="btn-sm btn-sm-edit" onclick="editarReceta('${r.id}')">✏ Editar</button>
+        <button class="btn-sm btn-sm-del" onclick="eliminarReceta('${r.id}')">✕ Eliminar</button>
+      </div>
+    </div>`).join('');
+}
+
+function abrirFormReceta(id=null){
+  _editRecetaId = id;
+  _ingFilas = [];
+  const titulo = document.getElementById('recetaFormTitle');
+  if(id){
+    const rec = _recetas.find(r=>r.id===id);
+    if(!rec) return;
+    titulo.textContent = '✏ Editar receta';
+    document.getElementById('recNombre').value = rec.nombre||'';
+    document.getElementById('recDesc').value = rec.descripcion||'';
+    _ingFilas = (rec.ingredientes||[]).map(i=>({...i}));
+  } else {
+    titulo.textContent = '📝 Nueva receta';
+    document.getElementById('recNombre').value = '';
+    document.getElementById('recDesc').value = '';
+    _ingFilas = [];
+  }
+  renderIngTable();
+  actualizarResumen();
+  document.getElementById('recetaForm').style.display = 'block';
+  document.getElementById('recetaForm').scrollIntoView({behavior:'smooth'});
+}
+
+function cerrarFormReceta(){
+  document.getElementById('recetaForm').style.display = 'none';
+  _editRecetaId = null;
+  _ingFilas = [];
+}
+
+function editarReceta(id){ abrirFormReceta(id); }
+
+async function eliminarReceta(id){
+  if(!confirm('¿Eliminar esta receta?')) return;
+  const {db, doc, deleteDoc} = window._fb;
+  try {
+    await deleteDoc(doc(db,'recetas',id));
+    _recetas = _recetas.filter(r=>r.id!==id);
+    renderRecetasGrid();
+    showToast('Receta eliminada','info');
+  } catch(e){ showToast('Error eliminando','error'); }
+}
+
+function renderIngTable(){
+  const tbody = document.getElementById('ingTableBody');
+  if(!tbody) return;
+  if(!_ingFilas.length){
+    tbody.innerHTML='<tr><td colspan="5" class="empty" style="padding:16px">Agregá ingredientes con el botón de arriba.</td></tr>';
+    return;
+  }
+  const optsInsumos = _insumos.map(i=>`<option value="${i.id}" ${i.id===(_ingFilas[0]?.insumoId)?'':''} >${i.nombre} (${i.unidad})</option>`).join('');
+  tbody.innerHTML = _ingFilas.map((fila,idx)=>{
+    const opts = _insumos.map(i=>`<option value="${i.id}" ${fila.insumoId===i.id?'selected':''}>${i.nombre} (${i.unidad})</option>`).join('');
+    const parcial = (fila.costoUnitario||0)*(fila.cantidad||0);
+    return `<tr>
+      <td><select onchange="onIngInsumoChange(${idx},this.value)">${opts}</select></td>
+      <td><input type="number" min="0" step="0.01" value="${fila.cantidad||''}" style="width:80px" onchange="onIngCantChange(${idx},this.value)" oninput="onIngCantChange(${idx},this.value)"></td>
+      <td style="color:var(--muted);font-size:.78rem">${fila.unidad||'—'}</td>
+      <td style="font-weight:600;color:var(--primary)">${fmtPeso(parcial)}</td>
+      <td><button class="btn-sm btn-sm-del" onclick="eliminarFilaIng(${idx})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function agregarFilaIngrediente(){
+  if(!_insumos.length){ showToast('Primero cargá insumos','warn'); return; }
+  const ins = _insumos[0];
+  _ingFilas.push({insumoId:ins.id, nombre:ins.nombre, cantidad:1, unidad:ins.unidad, costoUnitario:ins.costo});
+  renderIngTable();
+  actualizarResumen();
+}
+
+function onIngInsumoChange(idx, insumoId){
+  const ins = _insumos.find(i=>i.id===insumoId);
+  if(!ins) return;
+  _ingFilas[idx] = {..._ingFilas[idx], insumoId:ins.id, nombre:ins.nombre, unidad:ins.unidad, costoUnitario:ins.costo};
+  renderIngTable();
+  actualizarResumen();
+}
+
+function onIngCantChange(idx, val){
+  _ingFilas[idx].cantidad = parseFloat(val)||0;
+  actualizarResumen();
+  // Actualizar solo el costo parcial sin re-render completo
+  const rows = document.querySelectorAll('#ingTableBody tr');
+  if(rows[idx]){
+    const td = rows[idx].querySelectorAll('td');
+    if(td[3]) td[3].textContent = fmtPeso((_ingFilas[idx].costoUnitario||0)*(_ingFilas[idx].cantidad||0));
+  }
+}
+
+function eliminarFilaIng(idx){
+  _ingFilas.splice(idx,1);
+  renderIngTable();
+  actualizarResumen();
+}
+
+function actualizarResumen(){
+  const alim = _ingFilas.filter(f=>f.unidad!=='unidad'||!['Descartables'].includes(
+    (_insumos.find(i=>i.id===f.insumoId)||{}).categoria
+  )).reduce((s,f)=>s+(f.costoUnitario||0)*(f.cantidad||0),0);
+  const desc = _ingFilas.filter(f=>{
+    const ins = _insumos.find(i=>i.id===f.insumoId);
+    return ins && ins.categoria==='Descartables';
+  }).reduce((s,f)=>s+(f.costoUnitario||0)*(f.cantidad||0),0);
+  const total = _ingFilas.reduce((s,f)=>s+(f.costoUnitario||0)*(f.cantidad||0),0);
+  const el1=document.getElementById('subtotalAlimentos');
+  const el2=document.getElementById('subtotalDescartables');
+  const el3=document.getElementById('costoTotalValor');
+  if(el1) el1.textContent=fmtPeso(alim);
+  if(el2) el2.textContent=fmtPeso(desc);
+  if(el3) el3.textContent=fmtPeso(total);
+}
+
+async function guardarReceta(){
+  const nombre = document.getElementById('recNombre').value.trim();
+  const descripcion = document.getElementById('recDesc').value.trim();
+  if(!nombre){ showToast('Ingresá el nombre de la receta','warn'); return; }
+  if(!_ingFilas.length){ showToast('Agregá al menos un ingrediente','warn'); return; }
+  const costoTotal = _ingFilas.reduce((s,f)=>s+(f.costoUnitario||0)*(f.cantidad||0),0);
+  const {db, collection, doc, setDoc} = window._fb;
+  try {
+    if(_editRecetaId){
+      const data = {nombre, descripcion, ingredientes:_ingFilas, costoTotal, fechaCreacion:nowISO()};
+      await setDoc(doc(db,'recetas',_editRecetaId), data);
+      const idx = _recetas.findIndex(r=>r.id===_editRecetaId);
+      if(idx>=0) _recetas[idx]={id:_editRecetaId,...data};
+      showToast('✅ Receta actualizada','success');
+    } else {
+      const ref = doc(collection(db,'recetas'));
+      const data = {nombre, descripcion, ingredientes:_ingFilas, costoTotal, fechaCreacion:nowISO()};
+      await setDoc(ref, data);
+      _recetas.push({id:ref.id,...data});
+      showToast('✅ Receta guardada','success');
+    }
+    cerrarFormReceta();
+    renderRecetasGrid();
+  } catch(e){ showToast('Error guardando receta','error'); console.error(e); }
+}
+
 // Exponer al scope global (necesario por ES modules de Firebase)
 window.doLogin=doLogin;window.doLogout=doLogout;window.showPage=showPage;
 window.selectSuc=selectSuc;
+// Insumos
+window.abrirModalInsumo=abrirModalInsumo;window.cerrarModalInsumo=cerrarModalInsumo;
+window.guardarInsumo=guardarInsumo;window.editarInsumo=editarInsumo;
+window.eliminarInsumo=eliminarInsumo;window.toggleHistorial=toggleHistorial;
+// Recetas
+window.abrirFormReceta=abrirFormReceta;window.cerrarFormReceta=cerrarFormReceta;
+window.guardarReceta=guardarReceta;window.editarReceta=editarReceta;
+window.eliminarReceta=eliminarReceta;window.agregarFilaIngrediente=agregarFilaIngrediente;
+window.onIngInsumoChange=onIngInsumoChange;window.onIngCantChange=onIngCantChange;
+window.eliminarFilaIng=eliminarFilaIng;
 window.onDateChange=onDateChange;window.toggleDelMode=toggleDelMode;
 window.addVianda=addVianda;window.delVianda=delVianda;window.chgCount=chgCount;
 window.togAsist=togAsist;window.addEmpleado=addEmpleado;window.delEmp=delEmp;
