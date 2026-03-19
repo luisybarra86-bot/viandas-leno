@@ -157,24 +157,42 @@ input,select{font-family:'Inter',sans-serif}
   border-bottom:1px solid rgba(255,255,255,.07);
   min-height:var(--topbar-h);
 }
-.sidebar-logo .emoji{font-size:1.5rem}
-.sidebar-logo .name{font-weight:700;font-size:1.05rem;letter-spacing:-.3px;line-height:1.2}
-.sidebar-logo .sub{font-size:.65rem;color:rgba(255,255,255,.45);font-weight:500;margin-top:1px;text-transform:uppercase;letter-spacing:.5px}
-.sidebar-nav{flex:1;padding:16px 10px;overflow-y:auto}
+.sidebar-logo .emoji{font-size:22px;line-height:1}
+.sidebar-logo .name{font-weight:600;font-size:1rem;letter-spacing:-.2px;line-height:1.2;color:#fff}
+.sidebar-logo .sub{font-size:10px;color:#8fa3b1;font-weight:500;margin-top:2px;text-transform:uppercase;letter-spacing:.8px}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+/* Etiquetas de grupo */
+.nav-group-label{
+  color:#4a6275;font-size:10px;letter-spacing:1.2px;
+  text-transform:uppercase;padding:10px 16px 6px;
+  font-weight:600;
+}
+/* Separadores entre grupos */
+.nav-divider{
+  border:none;border-top:0.5px solid #3a5068;margin:8px 16px;
+}
 .sidebar-nav .tab{
-  display:flex;align-items:center;gap:12px;
-  width:100%;padding:11px 16px;
-  background:transparent;border:none;border-radius:10px;
+  display:flex;align-items:center;gap:10px;
+  width:100%;padding:10px 16px;
+  background:transparent;border:none;
+  border-left:3px solid transparent;
   color:rgba(255,255,255,.65);font-size:.85rem;font-weight:500;
-  text-align:left;transition:all .18s;margin-bottom:3px;
+  text-align:left;transition:all .18s;margin-bottom:2px;
   position:relative;
 }
-.sidebar-nav .tab .nav-icon{font-size:1.1rem;flex-shrink:0;width:22px;text-align:center}
-.sidebar-nav .tab:hover{background:rgba(255,255,255,.08);color:#fff}
-.sidebar-nav .tab.active{
-  background:var(--primary);color:#fff;
-  box-shadow:0 3px 10px rgba(232,82,26,.35);
+.sidebar-nav .tab .nav-icon{font-size:1rem;flex-shrink:0;width:20px;text-align:center}
+/* Punto indicador */
+.tab-dot{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  background:#4a6275;transition:background .18s;
 }
+.sidebar-nav .tab:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .tab:hover .tab-dot{background:rgba(232,82,26,.6)}
+.sidebar-nav .tab.active{
+  border-left:3px solid #E8521A;
+  background:rgba(232,82,26,.1);color:#fff;
+}
+.sidebar-nav .tab.active .tab-dot{background:#E8521A}
 .sidebar-footer{
   padding:16px;border-top:1px solid rgba(255,255,255,.07);
   font-size:.72rem;color:rgba(255,255,255,.3);text-align:center;
@@ -236,9 +254,17 @@ input,select{font-family:'Inter',sans-serif}
 /* ═══════════════════════════════════════════════
    COMUNES — TIPOGRAFÍA, CARDS, BOTONES, INPUTS
 ═══════════════════════════════════════════════ */
-.page-title{font-size:1.4rem;font-weight:700;color:var(--text);margin-bottom:22px;display:flex;align-items:center;gap:10px}
-.page-title .accent{color:var(--primary)}
-.page-title .title-icon{font-size:1.3rem}
+.page-title{font-size:1.25rem;font-weight:600;color:var(--text);margin-bottom:22px;display:flex;align-items:center;gap:12px}
+.page-title .accent{color:#E8521A;font-weight:600}
+/* Caja del ícono del título */
+.title-icon-box{
+  width:36px;height:36px;flex-shrink:0;
+  background:#fff3ee;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;
+}
+/* compatibilidad con el span antiguo sin caja */
+.page-title .title-icon{font-size:1.1rem}
 
 .card{
   background:var(--card);border-radius:var(--r);
@@ -262,13 +288,16 @@ input,select{font-family:'Inter',sans-serif}
   transition:background .18s, transform .1s;white-space:nowrap;
 }
 .btnB:hover{background:var(--secondary-dk);transform:translateY(-1px)}
+/* Botón "Ver" en informes: naranja */
+.rCtrl .btnB{background:#E8521A}
+.rCtrl .btnB:hover{background:#C94315}
 
 .btnG{
-  padding:10px 20px;background:var(--success);color:#fff;
+  padding:10px 20px;background:#1a7a45;color:#fff;
   border:none;border-radius:10px;font-weight:600;font-size:.83rem;
   transition:background .18s, transform .1s;white-space:nowrap;
 }
-.btnG:hover{background:#219150;transform:translateY(-1px)}
+.btnG:hover{background:#155e36;transform:translateY(-1px)}
 
 .btnS{
   padding:10px 20px;background:transparent;
@@ -336,18 +365,30 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .dateRow label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600}
 
 /* Sucursales */
-.sucGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;margin-bottom:22px}
+.sucGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
 .sucCard{
   background:var(--card);border:2px solid var(--border);
-  border-radius:14px;padding:16px 18px;cursor:pointer;
+  border-radius:14px;padding:14px 16px;cursor:pointer;
   transition:all .18s;display:flex;align-items:center;gap:14px;
   box-shadow:var(--shadow);
 }
 .sucCard:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .sucCard.sel{border-color:var(--primary);background:rgba(232,82,26,.04);box-shadow:0 4px 16px rgba(232,82,26,.15)}
-.sucEmoji{font-size:1.9rem;flex-shrink:0}
+/* Emoji en cuadrado #fff3ee */
+.sucEmoji{
+  width:44px;height:44px;flex-shrink:0;
+  background:#fff3ee;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;
+}
 .sucName{font-weight:600;font-size:.88rem;color:var(--text)}
-.sucCount{font-size:.72rem;color:var(--muted);margin-top:3px;font-weight:500}
+/* Badge naranja para el conteo */
+.sucCount{
+  display:inline-block;margin-top:5px;
+  background:rgba(232,82,26,.12);color:#E8521A;
+  font-size:.7rem;font-weight:700;
+  padding:2px 8px;border-radius:20px;
+}
 
 /* Panel registro */
 .regPanel{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:22px}
@@ -617,26 +658,31 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
         </div>
       </div>
       <div class="sidebar-nav">
+        <div class="nav-group-label">Operaciones</div>
         <button class="tab active" onclick="showPage('registro',this)">
-          <span class="nav-icon">📋</span> Registro
+          <span class="tab-dot"></span><span class="nav-icon">📋</span> Registro
         </button>
         <button class="tab" onclick="showPage('empleados',this)">
-          <span class="nav-icon">👥</span> Personal
+          <span class="tab-dot"></span><span class="nav-icon">👥</span> Personal
         </button>
         <button class="tab" onclick="showPage('menus',this)">
-          <span class="nav-icon">📅</span> Menú Semanal
+          <span class="tab-dot"></span><span class="nav-icon">📅</span> Menú Semanal
         </button>
+        <hr class="nav-divider">
+        <div class="nav-group-label">Informes</div>
         <button class="tab" onclick="showPage('diario',this)">
-          <span class="nav-icon">📊</span> Informe Diario
+          <span class="tab-dot"></span><span class="nav-icon">📊</span> Informe Diario
         </button>
         <button class="tab" onclick="showPage('mensual',this)">
-          <span class="nav-icon">📆</span> Informe Mensual
+          <span class="tab-dot"></span><span class="nav-icon">📆</span> Informe Mensual
         </button>
         <button class="tab" onclick="showPage('elecciones',this)">
-          <span class="nav-icon">📝</span> Elecciones
+          <span class="tab-dot"></span><span class="nav-icon">📝</span> Elecciones
         </button>
+        <hr class="nav-divider">
+        <div class="nav-group-label">Sistema</div>
         <button class="tab" onclick="showPage('config',this)">
-          <span class="nav-icon">⚙</span> Configuración
+          <span class="tab-dot"></span><span class="nav-icon">⚙</span> Configuración
         </button>
       </div>
       <div class="sidebar-footer">Viandas Leno © 2026</div>
@@ -667,7 +713,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
         <!-- ── REGISTRO ── -->
         <div id="page-registro" class="page active">
-          <div class="page-title"><span class="title-icon">📋</span> Registro <span class="accent">Diario de Viandas</span></div>
+          <div class="page-title"><span class="title-icon-box">📋</span> Registro <span class="accent">Diario</span></div>
           <div class="card" style="padding:18px 24px;margin-bottom:20px">
             <div class="dateRow">
               <label>Fecha:</label>
@@ -703,7 +749,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
         <!-- ── PERSONAL ── -->
         <div id="page-empleados" class="page">
-          <div class="page-title"><span class="title-icon">👥</span> Gestión de <span class="accent">Personal</span></div>
+          <div class="page-title"><span class="title-icon-box">👥</span> Gestión de <span class="accent">Personal</span></div>
           <div class="card">
             <div class="card-title">➕ Agregar empleado</div>
             <div class="personal-add-row">
@@ -717,7 +763,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
         <!-- ── MENÚ SEMANAL ── -->
         <div id="page-menus" class="page">
-          <div class="page-title"><span class="title-icon">📅</span> Planificación <span class="accent">Semanal de Menús</span></div>
+          <div class="page-title"><span class="title-icon-box">📅</span> Planificación <span class="accent">Semanal</span></div>
           <div class="card">
             <div class="sem-add-row">
               <div>
@@ -732,7 +778,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
         <!-- ── INFORME DIARIO ── -->
         <div id="page-diario" class="page">
-          <div class="page-title"><span class="title-icon">📊</span> Informe <span class="accent">Diario</span></div>
+          <div class="page-title"><span class="title-icon-box">📊</span> Informe <span class="accent">Diario</span></div>
           <div class="rCtrl">
             <div><label>Fecha</label><input type="date" id="rDDate"></div>
             <div><label>Sucursal</label><select id="rDSuc"><option value="">Todas</option></select></div>
@@ -746,7 +792,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
         <!-- ── INFORME MENSUAL ── -->
         <div id="page-mensual" class="page">
-          <div class="page-title"><span class="title-icon">📆</span> Informe <span class="accent">Mensual</span></div>
+          <div class="page-title"><span class="title-icon-box">📆</span> Informe <span class="accent">Mensual</span></div>
           <div class="rCtrl">
             <div><label>Mes</label><input type="month" id="rMMonth"></div>
             <div><label>Sucursal</label><select id="rMSuc"><option value="">Todas</option></select></div>
@@ -760,7 +806,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
         <!-- ── ELECCIONES ── -->
         <div id="page-elecciones" class="page">
-          <div class="page-title"><span class="title-icon">📝</span> Elecciones <span class="accent">del Formulario</span></div>
+          <div class="page-title"><span class="title-icon-box">📝</span> Elecciones <span class="accent">del Formulario</span></div>
           <div class="rCtrl">
             <div><label>Fecha</label><input type="date" id="elecDate"></div>
             <div><label>Sucursal</label><select id="elecSuc"><option value="">Todas</option></select></div>
@@ -774,7 +820,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
         <!-- ── CONFIG ── -->
         <div id="page-config" class="page">
-          <div class="page-title"><span class="title-icon">⚙</span> <span class="accent">Configuración</span></div>
+          <div class="page-title"><span class="title-icon-box">⚙</span> <span class="accent">Configuración</span></div>
           <div class="cfgBox">
             <h3>🏢 Sucursales</h3>
             <div id="cfgSucList"></div>
