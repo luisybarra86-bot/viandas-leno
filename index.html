@@ -24,7 +24,18 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db    = getFirestore(fbApp);
 
-window._fb = { db, doc, getDoc, setDoc, onSnapshot, collection, getDocs };
+const firebaseConfigNew = {
+  apiKey: "AIzaSyBLvUviobpilTyHDXJntXblApu5ozLnns8",
+  authDomain: "basedatosnew86.firebaseapp.com",
+  projectId: "basedatosnew86",
+  storageBucket: "basedatosnew86.firebasestorage.app",
+  messagingSenderId: "659304038099",
+  appId: "1:659304038099:web:57574e2d5feec2cab09e26"
+};
+const fbAppNew = initializeApp(firebaseConfigNew, 'basedatosnew86');
+const dbNew    = getFirestore(fbAppNew);
+
+window._fb = { db, dbNew, doc, getDoc, setDoc, onSnapshot, collection, getDocs };
 window._fbReady = true;
 document.dispatchEvent(new Event('fbReady'));
 </script>
@@ -965,6 +976,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
           <div class="section-header">
             <div class="page-title" style="margin-bottom:0"><span class="title-icon-box">📦</span> Gestión de <span class="accent">Insumos</span></div>
             <button class="btnA" onclick="abrirModalInsumo()">+ Agregar insumo</button>
+            <button class="btnA" style="background:#27AE60;margin-left:8px" onclick="sincronizarPreciosDesdeBase()">🔄 Sincronizar precios desde Leno</button>
           </div>
           <div class="card" style="padding:0;overflow:hidden">
             <div class="tblWrap" style="border:none;box-shadow:none;border-radius:0">
@@ -2219,6 +2231,45 @@ async function guardarReceta(){
   } catch(e){ showToast('Error guardando receta','error'); console.error(e); }
 }
 
+// ── Sincronizar precios desde basedatosnew86 ──────────────────────────────
+async function sincronizarPreciosDesdeBase(){
+  try {
+    const { dbNew, db, doc, getDoc, setDoc, collection, getDocs } = window._fb;
+    // Leer estado activo desde basedatosnew86
+    const stateSnap = await getDoc(doc(dbNew, 'leno_costos', 'state'));
+    if(!stateSnap.exists()){ showToast('No se encontró leno_costos/state','warn'); return; }
+    const stateData = stateSnap.data();
+    const activeMes = stateData.activeMes;
+    const historial = stateData.historial || [];
+    // Construir mapa nombre → precio del mes activo
+    const precioMap = {};
+    for(const item of historial){
+      const nombre = (item.nombre||'').toLowerCase().trim();
+      if(nombre && item.precios && item.precios[activeMes] !== undefined){
+        precioMap[nombre] = item.precios[activeMes];
+      }
+    }
+    // Leer insumos de vianda-leno y actualizar los que coincidan
+    const insumosSnap = await getDocs(collection(db, 'insumos'));
+    const hoy = new Date().toISOString().slice(0,10);
+    let actualizados = 0;
+    for(const d of insumosSnap.docs){
+      const data = d.data();
+      const nombreKey = (data.nombre||'').toLowerCase().trim();
+      if(precioMap[nombreKey] !== undefined){
+        await setDoc(doc(db, 'insumos', d.id), { ...data, costo: precioMap[nombreKey], fechaActualizacion: hoy });
+        actualizados++;
+      }
+    }
+    // Refrescar caché local
+    await loadInsumos();
+    showToast(`✅ ${actualizados} precio${actualizados!==1?'s':''} actualizado${actualizados!==1?'s':''}`, 'success');
+  } catch(e){
+    console.error('sincronizarPreciosDesdeBase', e);
+    showToast('Error al sincronizar precios', 'error');
+  }
+}
+
 // Exponer al scope global (necesario por ES modules de Firebase)
 window.doLogin=doLogin;window.doLogout=doLogout;window.showPage=showPage;
 window.selectSuc=selectSuc;
@@ -2226,6 +2277,7 @@ window.selectSuc=selectSuc;
 window.abrirModalInsumo=abrirModalInsumo;window.cerrarModalInsumo=cerrarModalInsumo;
 window.guardarInsumo=guardarInsumo;window.editarInsumo=editarInsumo;
 window.eliminarInsumo=eliminarInsumo;window.toggleHistorial=toggleHistorial;
+window.sincronizarPreciosDesdeBase=sincronizarPreciosDesdeBase;
 // Recetas
 window.abrirFormReceta=abrirFormReceta;window.cerrarFormReceta=cerrarFormReceta;
 window.guardarReceta=guardarReceta;window.editarReceta=editarReceta;
