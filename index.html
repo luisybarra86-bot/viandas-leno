@@ -2222,27 +2222,14 @@ async function sincronizarPreciosDesdeBase(){
     const stateSnap = await getDoc(doc(dbNew, 'leno_costos', 'state'));
     if(!stateSnap.exists()){ showToast('No se encontró leno_costos/state','warn'); return; }
     const stateData = stateSnap.data();
-    const activeMes = stateData.activeMes;
     const historial = stateData.historial || [];
-    console.log("activeMes:", activeMes, "total historial:", historial.length);
-    console.log("primeros 5:", historial.slice(0,5));
-    console.log("items VIANDAS:", historial.filter(i => i.sucursal === "VIANDAS").length);
-    console.log("item ejemplo:", JSON.stringify(historial[0]));
-    // Filtrar solo items de VIANDAS y construir mapa nombre → {precio, categoria, unidad}
-    const ORDEN_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    // Filtrar solo items de VIANDAS y construir mapa nombre → {precioNuevo, categoria, unidad}
     const itemsViandas = historial.filter(item => (item.sucursal||'').toUpperCase().trim() === 'VIANDAS');
     const itemMap = {};
     for(const item of itemsViandas){
       const key = (item.nombre||'').toLowerCase().trim();
-      if(!key || !item.precios) continue;
-      // Usar precio del mes activo; si no existe, tomar el último mes disponible
-      let costo = item.precios[activeMes];
-      if(costo === undefined){
-        for(let i = ORDEN_MESES.length - 1; i >= 0; i--){
-          if(item.precios[ORDEN_MESES[i]] !== undefined){ costo = item.precios[ORDEN_MESES[i]]; break; }
-        }
-      }
-      if(costo === undefined) continue;
+      const costo = item.precioNuevo;
+      if(!key || costo === undefined || costo === null) continue;
       itemMap[key] = {
         nombre: (item.nombre||'').trim(),
         categoria: (item.categoria||'').trim(),
@@ -2250,7 +2237,6 @@ async function sincronizarPreciosDesdeBase(){
         costo,
       };
     }
-    console.log("mapa construido:", Object.keys(itemMap).length, "items", JSON.stringify(Object.entries(itemMap).slice(0,3)));
     if(!Object.keys(itemMap).length){
       showToast('No hay items de VIANDAS con precio disponible', 'warn');
       return;
