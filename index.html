@@ -10,7 +10,7 @@
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, addDoc, onSnapshot, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDLH1Lye1MqA35SVE1y26kEo5IqHbx0vwM",
@@ -35,7 +35,7 @@ const firebaseConfigNew = {
 const fbAppNew = initializeApp(firebaseConfigNew, 'basedatosnew86');
 const dbNew    = getFirestore(fbAppNew);
 
-window._fb = { db, dbNew, doc, getDoc, setDoc, onSnapshot, collection, getDocs, deleteDoc };
+window._fb = { db, dbNew, doc, getDoc, setDoc, addDoc, onSnapshot, collection, getDocs, deleteDoc };
 window._fbReady = true;
 document.dispatchEvent(new Event('fbReady'));
 </script>
@@ -2217,36 +2217,65 @@ async function guardarReceta(){
 // ── Sincronizar precios desde basedatosnew86 ──────────────────────────────
 async function sincronizarPreciosDesdeBase(){
   try {
-    const { dbNew, db, doc, getDoc, setDoc, collection, getDocs } = window._fb;
+    const { dbNew, db, doc, getDoc, setDoc, addDoc, collection, getDocs } = window._fb;
     // Leer estado activo desde basedatosnew86
     const stateSnap = await getDoc(doc(dbNew, 'leno_costos', 'state'));
     if(!stateSnap.exists()){ showToast('No se encontró leno_costos/state','warn'); return; }
     const stateData = stateSnap.data();
     const activeMes = stateData.activeMes;
     const historial = stateData.historial || [];
-    // Construir mapa nombre → precio del mes activo
-    const precioMap = {};
-    for(const item of historial){
-      const nombre = (item.nombre||'').toLowerCase().trim();
-      if(nombre && item.precios && item.precios[activeMes] !== undefined){
-        precioMap[nombre] = item.precios[activeMes];
+    // Filtrar solo items de VIANDAS y construir mapa nombre → {precio, categoria, unidad}
+    const itemsViandas = historial.filter(item => (item.sucursal||'').toUpperCase().trim() === 'VIANDAS');
+    const itemMap = {};
+    for(const item of itemsViandas){
+      const key = (item.nombre||'').toLowerCase().trim();
+      if(key && item.precios && item.precios[activeMes] !== undefined){
+        itemMap[key] = {
+          nombre: (item.nombre||'').trim(),
+          categoria: (item.categoria||'').trim(),
+          unidad: (item.unidad||'').trim(),
+          costo: item.precios[activeMes],
+        };
       }
     }
-    // Leer insumos de vianda-leno y actualizar los que coincidan
+    if(!Object.keys(itemMap).length){
+      showToast('No hay items de VIANDAS en el mes activo', 'warn');
+      return;
+    }
+    // Leer insumos actuales de vianda-leno
     const insumosSnap = await getDocs(collection(db, 'insumos'));
     const hoy = new Date().toISOString().slice(0,10);
-    let actualizados = 0;
+    // Construir mapa de insumos existentes por nombre
+    const existentes = {};
     for(const d of insumosSnap.docs){
-      const data = d.data();
-      const nombreKey = (data.nombre||'').toLowerCase().trim();
-      if(precioMap[nombreKey] !== undefined){
-        await setDoc(doc(db, 'insumos', d.id), { ...data, costo: precioMap[nombreKey], fechaActualizacion: hoy });
+      const key = (d.data().nombre||'').toLowerCase().trim();
+      existentes[key] = { id: d.id, data: d.data() };
+    }
+    let actualizados = 0;
+    let creados = 0;
+    for(const [key, item] of Object.entries(itemMap)){
+      if(existentes[key]){
+        // Actualizar solo costo y fechaActualizacion
+        await setDoc(doc(db, 'insumos', existentes[key].id), {
+          ...existentes[key].data,
+          costo: item.costo,
+          fechaActualizacion: hoy
+        });
         actualizados++;
+      } else {
+        // Crear insumo nuevo
+        await addDoc(collection(db, 'insumos'), {
+          nombre: item.nombre,
+          categoria: item.categoria,
+          unidad: item.unidad,
+          costo: item.costo,
+          fechaActualizacion: hoy
+        });
+        creados++;
       }
     }
-    // Refrescar caché local
     await loadInsumos();
-    showToast(`✅ ${actualizados} precio${actualizados!==1?'s':''} actualizado${actualizados!==1?'s':''}`, 'success');
+    showToast(`✅ ${actualizados} actualizado${actualizados!==1?'s':''}, ${creados} creado${creados!==1?'s':''}`, 'success');
   } catch(e){
     console.error('sincronizarPreciosDesdeBase', e);
     showToast('Error al sincronizar precios', 'error');
