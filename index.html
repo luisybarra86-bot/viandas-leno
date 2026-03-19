@@ -2225,21 +2225,29 @@ async function sincronizarPreciosDesdeBase(){
     const activeMes = stateData.activeMes;
     const historial = stateData.historial || [];
     // Filtrar solo items de VIANDAS y construir mapa nombre → {precio, categoria, unidad}
+    const ORDEN_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const itemsViandas = historial.filter(item => (item.sucursal||'').toUpperCase().trim() === 'VIANDAS');
     const itemMap = {};
     for(const item of itemsViandas){
       const key = (item.nombre||'').toLowerCase().trim();
-      if(key && item.precios && item.precios[activeMes] !== undefined){
-        itemMap[key] = {
-          nombre: (item.nombre||'').trim(),
-          categoria: (item.categoria||'').trim(),
-          unidad: (item.unidad||'').trim(),
-          costo: item.precios[activeMes],
-        };
+      if(!key || !item.precios) continue;
+      // Usar precio del mes activo; si no existe, tomar el último mes disponible
+      let costo = item.precios[activeMes];
+      if(costo === undefined){
+        for(let i = ORDEN_MESES.length - 1; i >= 0; i--){
+          if(item.precios[ORDEN_MESES[i]] !== undefined){ costo = item.precios[ORDEN_MESES[i]]; break; }
+        }
       }
+      if(costo === undefined) continue;
+      itemMap[key] = {
+        nombre: (item.nombre||'').trim(),
+        categoria: (item.categoria||'').trim(),
+        unidad: (item.unidad||'').trim(),
+        costo,
+      };
     }
     if(!Object.keys(itemMap).length){
-      showToast('No hay items de VIANDAS en el mes activo', 'warn');
+      showToast('No hay items de VIANDAS con precio disponible', 'warn');
       return;
     }
     // Leer insumos actuales de vianda-leno
