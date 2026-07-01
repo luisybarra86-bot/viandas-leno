@@ -93,13 +93,14 @@ input,select{font-family:'Inter',sans-serif}
 ═══════════════════════════════════════════════ */
 #loginScreen{
   display:none;align-items:center;justify-content:center;min-height:100vh;
-  background:linear-gradient(135deg, var(--secondary) 0%, #34495e 50%, var(--primary) 100%);
+  background:linear-gradient(135deg, #B02C24 0%, #653276 50%, #E59432 100%);
 }
 .lcard{
   background:var(--card);border-radius:24px;
   padding:52px 44px;width:420px;
   box-shadow:0 32px 80px rgba(0,0,0,.25);
   animation:loginIn .45s cubic-bezier(.22,1,.36,1);
+  border-top:4px solid #B02C24;
 }
 @keyframes loginIn{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
 .llogo{text-align:center;margin-bottom:40px}
@@ -857,7 +858,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
 
 <!-- LOADER -->
 <div id="loader">
-  <div class="loader-logo">🏡</div>
+  <img src="logo2.png" alt="LENO" class="loader-logo" style="width:80px;height:auto;border-radius:8px">
   <div class="spinner"></div>
   <div class="loadTxt">Conectando con la nube...</div>
 </div>
@@ -894,7 +895,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
     <!-- SIDEBAR -->
     <nav class="sidebar" id="sidebar">
       <div class="sidebar-logo">
-        <span class="emoji">🏡</span>
+        <img src="logo1.png" alt="LENO" style="width:32px;height:32px;border-radius:4px">
         <div>
           <div class="name">Viandas Leno</div>
           <div class="sub">Gestión</div>
@@ -955,7 +956,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
           <button class="hamburger" onclick="toggleSidebar()">
             <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <span class="hbrand">🏡 Viandas Leno</span>
+          <span class="hbrand"><img src="logo1.png" alt="LENO" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;border-radius:4px"> Viandas Leno</span>
         </div>
         <div class="hright">
           <span id="syncBadge" class="syncBadge ok">
