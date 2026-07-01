@@ -46,16 +46,16 @@ document.dispatchEvent(new Event('fbReady'));
    VARIABLES & RESET
 ═══════════════════════════════════════════════ */
 :root {
-  --primary:      #E8521A;
-  --primary-dark: #C94315;
-  --secondary:    #2C3E50;
-  --secondary-dk: #1a252f;
+  --primary:      #B02C24;
+  --primary-dark: #8B2218;
+  --secondary:    #653276;
+  --secondary-dk: #4a2456;
   --bg:           #F5F5F0;
   --card:         #FFFFFF;
   --text:         #2C3E50;
   --muted:        #7F8C8D;
-  --success:      #27AE60;
-  --danger:       #E74C3C;
+  --success:      #68A345;
+  --danger:       #B02C24;
   --border:       #ECEDEE;
   --sidebar-w:    240px;
   --topbar-h:     64px;
@@ -857,7 +857,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
 
 <!-- LOADER -->
 <div id="loader">
-  <div class="loader-logo">🍱</div>
+  <div class="loader-logo">🏡</div>
   <div class="spinner"></div>
   <div class="loadTxt">Conectando con la nube...</div>
 </div>
@@ -894,7 +894,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
     <!-- SIDEBAR -->
     <nav class="sidebar" id="sidebar">
       <div class="sidebar-logo">
-        <span class="emoji">🍱</span>
+        <span class="emoji">🏡</span>
         <div>
           <div class="name">Viandas Leno</div>
           <div class="sub">Gestión</div>
@@ -903,36 +903,36 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
       <div class="sidebar-nav">
         <div class="nav-group-label">Operaciones</div>
         <button class="tab active" onclick="showPage('dashboard',this)">
-          <span class="tab-dot"></span><span class="nav-icon">🏠</span> Dashboard
+          <span class="tab-dot"></span><span class="nav-icon">🏡</span> Dashboard
         </button>
         <button class="tab" onclick="showPage('reportes',this)">
           <span class="tab-dot"></span><span class="nav-icon">📊</span> Reportes
         </button>
         <button class="tab" onclick="showPage('registro',this)">
-          <span class="tab-dot"></span><span class="nav-icon">📋</span> Registro
+          <span class="tab-dot"></span><span class="nav-icon">📑</span> Registro
         </button>
         <button class="tab" onclick="showPage('empleados',this)">
-          <span class="tab-dot"></span><span class="nav-icon">👥</span> Personal
+          <span class="tab-dot"></span><span class="nav-icon">👨‍💼</span> Personal
         </button>
         <button class="tab" onclick="showPage('menus',this)">
           <span class="tab-dot"></span><span class="nav-icon">📅</span> Menú Semanal
         </button>
         <button class="tab" onclick="showPage('catalogo',this)">
-          <span class="tab-dot"></span><span class="nav-icon">🍱</span> Catálogo Menús
+          <span class="tab-dot"></span><span class="nav-icon">🗂️</span> Catálogo Menús
         </button>
         <button class="tab" onclick="showPage('pedidos',this)">
-          <span class="tab-dot"></span><span class="nav-icon">🛒</span> Pedidos Insumos
+          <span class="tab-dot"></span><span class="nav-icon">🏪</span> Pedidos Insumos
         </button>
         <hr class="nav-divider">
         <div class="nav-group-label">Informes</div>
         <button class="tab" onclick="showPage('diario',this)">
-          <span class="tab-dot"></span><span class="nav-icon">📊</span> Informe Diario
+          <span class="tab-dot"></span><span class="nav-icon">📈</span> Informe Diario
         </button>
         <button class="tab" onclick="showPage('mensual',this)">
           <span class="tab-dot"></span><span class="nav-icon">📆</span> Informe Mensual
         </button>
         <button class="tab" onclick="showPage('elecciones',this)">
-          <span class="tab-dot"></span><span class="nav-icon">📝</span> Elecciones
+          <span class="tab-dot"></span><span class="nav-icon">☑️</span> Elecciones
         </button>
         <button class="tab" onclick="showPage('remito',this)">
           <span class="tab-dot"></span><span class="nav-icon">🧾</span> Remito de Venta
@@ -955,7 +955,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
           <button class="hamburger" onclick="toggleSidebar()">
             <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <span class="hbrand">🍱 Viandas Leno</span>
+          <span class="hbrand">🏡 Viandas Leno</span>
         </div>
         <div class="hright">
           <span id="syncBadge" class="syncBadge ok">
@@ -972,13 +972,13 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
         <!-- ── DASHBOARD ── -->
         <div id="page-dashboard" class="page active">
           <div class="page-title">
-            <span class="title-icon-box">🏠</span> Dashboard
+            <span class="title-icon-box">🏡</span> Dashboard
             <span class="accent">Hoy</span>
             <span id="dash-fecha" style="font-size:.78rem;color:var(--muted);font-weight:400;margin-left:auto"></span>
           </div>
 
           <!-- ── KPIs ROW 1: Pedidos ── -->
-          <div class="kpi-row-label">📋 Pedidos del Personal</div>
+          <div class="kpi-row-label">📑 Pedidos del Personal</div>
           <div class="dash-kpis dash-kpis-3">
             <div class="dash-kpi-card">
               <div class="dkpi-icon">🍱</div>
@@ -1089,7 +1089,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
 
         <!-- ── REGISTRO ── -->
         <div id="page-registro" class="page">
-          <div class="page-title"><span class="title-icon-box">📋</span> Registro <span class="accent">Diario</span></div>
+          <div class="page-title"><span class="title-icon-box">📑</span> Registro <span class="accent">Diario</span></div>
           <div class="card" style="padding:18px 24px;margin-bottom:20px">
             <div class="dateRow">
               <label>Fecha:</label>
@@ -1125,7 +1125,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
 
         <!-- ── PERSONAL ── -->
         <div id="page-empleados" class="page">
-          <div class="page-title"><span class="title-icon-box">👥</span> Gestión de <span class="accent">Personal</span></div>
+          <div class="page-title"><span class="title-icon-box">👨‍💼</span> Gestión de <span class="accent">Personal</span></div>
           <!-- Agregar -->
           <div class="card" style="margin-bottom:16px">
             <div class="card-title">➕ Agregar empleado</div>
@@ -1164,7 +1164,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
 
         <!-- ── CATÁLOGO DE MENÚS ── -->
         <div id="page-catalogo" class="page">
-          <div class="page-title"><span class="title-icon-box">🍱</span> Catálogo de <span class="accent">Menús</span></div>
+          <div class="page-title"><span class="title-icon-box">🗂️</span> Catálogo de <span class="accent">Menús</span></div>
           <div class="cfgBox" style="max-width:620px">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
               <h3 style="margin:0">Menús disponibles <span id="catCount" style="font-size:.78rem;color:var(--muted);font-weight:400"></span></h3>
@@ -1180,7 +1180,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
 
         <!-- ── INFORME DIARIO ── -->
         <div id="page-diario" class="page">
-          <div class="page-title"><span class="title-icon-box">📊</span> Informe <span class="accent">Diario</span></div>
+          <div class="page-title"><span class="title-icon-box">📈</span> Informe <span class="accent">Diario</span></div>
           <div class="rCtrl">
             <div><label>Fecha</label><input type="date" id="rDDate"></div>
             <div><label>Sucursal</label><select id="rDSuc"><option value="">Todas</option></select></div>
@@ -1208,7 +1208,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
 
         <!-- ── ELECCIONES ── -->
         <div id="page-elecciones" class="page">
-          <div class="page-title"><span class="title-icon-box">📝</span> Elecciones <span class="accent">del Formulario</span></div>
+          <div class="page-title"><span class="title-icon-box">☑️</span> Elecciones <span class="accent">del Formulario</span></div>
           <div class="rCtrl">
             <div><label>Fecha</label><input type="date" id="elecDate"></div>
             <div><label>Sucursal</label><select id="elecSuc"><option value="">Todas</option></select></div>
