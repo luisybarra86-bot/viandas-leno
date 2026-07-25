@@ -1310,6 +1310,12 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
             <button class="btnA" onclick="changePass()" style="width:100%">Guardar contraseña</button>
           </div>
           <div class="cfgBox">
+            <h3>📋 Link Google Form Menú Semanal</h3>
+            <p>Pega aquí el link del formulario que envías al personal para que elija el menú:</p>
+            <input class="cfgIn" id="cfgFormLink" placeholder="https://forms.gle/..." style="width:100%;margin:10px 0">
+            <button class="btnA" onclick="saveFormLink()" style="width:100%">💾 Guardar Link</button>
+          </div>
+          <div class="cfgBox">
             <h3>☁ Estado de sincronización</h3>
             <p>Todos los datos se guardan en Firebase. Podés usar la app desde cualquier dispositivo y los datos estarán actualizados en tiempo real.</p>
             <div style="margin-top:14px">
@@ -1650,6 +1656,15 @@ function changePass(){
   if(!np){showToast('Ingresá una contraseña','warn');return;}
   DB.creds.pass=np; save(); showToast('✅ Contraseña actualizada','success');
   document.getElementById('newPass').value='';
+}
+
+function saveFormLink(){
+  const link=document.getElementById('cfgFormLink').value.trim();
+  if(!link){showToast('Pegá el link del Google Form','warn');return;}
+  DB.configMenu = DB.configMenu || {};
+  DB.configMenu.formLink = link;
+  save();
+  showToast('✅ Link guardado','success');
 }
 
 // ══════════════════════════════════════════════
@@ -2201,8 +2216,39 @@ async function publicarSemana(inicio){
     sem.publicado=true;
     save();
     renderMenuSem();
-    showToast('📤 Semana enviada — el formulario se actualizará en minutos','success',5000);
+
+    const formLink = (DB.configMenu && DB.configMenu.formLink) || '';
+    if(formLink){
+      const mensaje = `Buenos días, envío menú semanal. Recuerden completarlo, por favor y gracias.\n${formLink}`;
+      mostrarMensajePublicacion(mensaje);
+    } else {
+      showToast('⚠️ Configura el link del Google Form en Configuración','warn',5000);
+    }
   }catch(e){showToast('Error al publicar: '+e.message,'error');}
+}
+
+function mostrarMensajePublicacion(mensaje){
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:32px;max-width:500px;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:16px;color:#2C3E50">📤 Mensaje listo para enviar</h2>
+      <textarea readonly style="width:100%;min-height:120px;padding:12px;border:1.5px solid #E8ECEF;border-radius:10px;font-family:monospace;font-size:.9rem;resize:none;color:#2C3E50">${mensaje}</textarea>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button onclick="copiarMensaje(\`${mensaje.replace(/`/g, '\\`')}\`)" style="flex:1;padding:12px;background:#B02C24;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer">📋 Copiar</button>
+        <button onclick="this.closest('div').parentElement.parentElement.remove()" style="flex:1;padding:12px;background:#E8ECEF;color:#2C3E50;border:none;border-radius:10px;font-weight:600;cursor:pointer">Cerrar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function copiarMensaje(texto){
+  navigator.clipboard.writeText(texto).then(() => {
+    showToast('✅ Copiado al portapapeles','success');
+  }).catch(() => {
+    showToast('Error al copiar','error');
+  });
 }
 
 window.publicarSemana=publicarSemana;
@@ -2464,6 +2510,10 @@ function renderCfg(){
     r.innerHTML=`<span class="emoji">${s.emoji}</span><span class="suc-name">${s.nombre}</span><span class="suc-cnt">${DB.empleados.filter(e=>e.sucId===s.id).length} emp.</span>`;
     el.appendChild(r);
   });
+  const formLinkInput = document.getElementById('cfgFormLink');
+  if(formLinkInput){
+    formLinkInput.value = (DB.configMenu && DB.configMenu.formLink) || '';
+  }
 }
 function addSucursal(){
   const nom=document.getElementById('newSucNom').value.trim(),emo=document.getElementById('newSucEmo').value.trim()||'🍴';
