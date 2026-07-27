@@ -1906,6 +1906,7 @@ function empRender() {
     const el = document.getElementById('empLista');
     if (!el) return;
 
+    // Usar DB.empleados directamente - es la fuente de verdad
     const emps = DB.empleados && DB.empleados.length > 0 ? DB.empleados : [];
 
     if (!emps.length) {
@@ -1913,40 +1914,60 @@ function empRender() {
       return;
     }
 
-    // Agrupar por sucursal
-    const grouped = {};
-    emps.forEach(e => {
-      const k = e.sucId || 'sin_sucursal';
-      if (!grouped[k]) grouped[k] = [];
-      grouped[k].push(e);
+    // HTML simple mostrando todos los empleados
+    let html = '<div style="display:grid; gap:12px;">';
+    emps.forEach(emp => {
+      const suc = emp.sucId || emp.sucursal || 'Sin suc.';
+      const sucName = DB.sucursales.find(s => s.id === suc)?.nombre || suc;
+      html += `
+        <div style="border:1px solid #ddd; padding:12px; border-radius:8px;">
+          <div style="font-weight:bold; margin-bottom:6px;">${emp.nombre}</div>
+          <div style="font-size:0.9em; color:#666;">📍 ${sucName}</div>
+        </div>
+      `;
     });
+    html += '</div>';
 
-    // Resumen rápido
-    const totalActivos = emps.filter(e => e.activo !== false).length;
-    let html = `<div class="sumCards" style="margin-bottom:16px">
-      <div class="sCard"><div class="sl">Total</div><div class="sv">${emps.length}</div><div class="ss">empleados</div></div>
-      <div class="sCard"><div class="sl">Activos</div><div class="sv" style="color:var(--success)">${totalActivos}</div><div class="ss">en nómina</div></div>
-      <div class="sCard"><div class="sl">Inactivos</div><div class="sv" style="color:var(--danger)">${emps.length - totalActivos}</div><div class="ss">pausados</div></div>
-    </div>`;
+    el.innerHTML = html;
+  } catch(e) {
+    console.error('empRender error:', e);
+    document.getElementById('empLista').innerHTML = '<div class="empty">Error al cargar.</div>';
+  }
+  return;
 
-    DB.sucursales.forEach(suc => {
-      const sucEmps = grouped[suc.id];
-      if (!sucEmps || !sucEmps.length) return;
-      const activos = sucEmps.filter(e => e.activo).length;
-      html += `<div class="suc-group">
-        <div class="suc-group-title">${suc.emoji} ${suc.nombre}<span class="cnt">${activos}/${sucEmps.length} activos</span></div>
-        <div class="empGrid">`;
-      sucEmps.forEach(emp => {
-        html += `<div class="empCard ${!emp.activo ? 'emp-off' : ''}">
-          <div class="emp-avatar" style="${!emp.activo?'opacity:.45':'background:var(--primary)'}">${getInitials(emp.nombre)}</div>
-          <div class="emp-card-body">
-            <div class="emp-card-name">${emp.nombre}</div>
-            <span class="${emp.activo ? 'emp-badge-on' : 'emp-badge-off'}">${emp.activo ? 'Activo' : 'Inactivo'}</span>
-          </div>
-          <div class="emp-actions">
-            <button class="emp-btn-edit btnA" style="padding:5px 8px;font-size:.75rem" onclick="empEdit('${emp.id}')">✏️ Editar</button>
-            <button class="emp-btn-del btnD" style="padding:5px 8px;font-size:.75rem" onclick="empDelete('${emp.id}')">🗑 Eliminar</button>
-            <button class="emp-btn-tog ${emp.activo ? 'btnD' : 'btnA'}" style="padding:5px 8px;font-size:.71rem" onclick="empToggleActivo('${emp.id}')">${emp.activo ? '⏸' : '▶'}</button>
+  // Agrupar por sucursal
+  const grouped = {};
+  filtered.forEach(e => {
+    const k = e.sucursal || 'sin_sucursal';
+    if (!grouped[k]) grouped[k] = [];
+    grouped[k].push(e);
+  });
+
+  // Resumen rápido
+  const totalActivos = empSource.filter(e => e.activo !== false).length;
+  let html = `<div class="sumCards" style="margin-bottom:16px">
+    <div class="sCard"><div class="sl">Total</div><div class="sv">${empSource.length}</div><div class="ss">empleados</div></div>
+    <div class="sCard"><div class="sl">Activos</div><div class="sv" style="color:var(--success)">${totalActivos}</div><div class="ss">en nómina</div></div>
+    <div class="sCard"><div class="sl">Inactivos</div><div class="sv" style="color:var(--danger)">${empSource.length - totalActivos}</div><div class="ss">pausados</div></div>
+  </div>`;
+
+  DB.sucursales.forEach(suc => {
+    const emps = grouped[suc.id];
+    if (!emps || !emps.length) return;
+    const activos = emps.filter(e => e.activo).length;
+    html += `<div class="suc-group">
+      <div class="suc-group-title">${suc.emoji} ${suc.nombre}<span class="cnt">${activos}/${emps.length} activos</span></div>
+      <div class="empGrid">`;
+    emps.forEach(emp => {
+      html += `<div class="empCard ${!emp.activo ? 'emp-off' : ''}">
+        <div class="emp-avatar" style="${!emp.activo?'opacity:.45':'background:var(--primary)'}">${getInitials(emp.nombre)}</div>
+        <div class="emp-card-body">
+          <div class="emp-card-name">${emp.nombre}</div>
+          <span class="${emp.activo ? 'emp-badge-on' : 'emp-badge-off'}">${emp.activo ? 'Activo' : 'Inactivo'}</span>
+        </div>
+        <div class="emp-actions">
+          <button class="emp-btn-edit" onclick="empEdit('${emp.id}')">✏️</button>
+          <button class="emp-btn-tog ${emp.activo ? 'btnD' : 'btnA'}" style="padding:5px 10px;font-size:.71rem" onclick="empToggleActivo('${emp.id}')">${emp.activo ? '⏸' : '▶'}</button>
         </div>
       </div>`;
     });
@@ -2037,23 +2058,6 @@ async function empSaveEdit() {
 
 function empModalClose() {
   document.getElementById('empModal').classList.remove('open');
-}
-
-async function empDelete(id) {
-  const emp = DB.empleados.find(e => e.id === id);
-  if (!emp) return;
-
-  if (!confirm(`¿Eliminar a ${emp.nombre}? Esta acción no se puede deshacer.`)) return;
-
-  const { db, doc, deleteDoc } = window._fb;
-  try {
-    await deleteDoc(doc(db, 'empleados', id));
-    DB.empleados = DB.empleados.filter(e => e.id !== id);
-    empRender();
-    showToast(`${emp.nombre} eliminado ✅`, 'success');
-  } catch(e) {
-    showToast('Error al eliminar: ' + e.message, 'error');
-  }
 }
 
 // Alias legacy (por si algo lo llama)
@@ -3636,7 +3640,7 @@ window.pedRenderCatalogo=pedRenderCatalogo;
 document.getElementById('catNewNombre')?.addEventListener('keydown',e=>{if(e.key==='Enter')addMenuCat()});
 window.empAdd=empAdd;window.empRender=empRender;window.empSetFilter=empSetFilter;
 window.empEdit=empEdit;window.empSaveEdit=empSaveEdit;window.empModalClose=empModalClose;
-window.empToggleActivo=empToggleActivo;window.empDelete=empDelete;
+window.empToggleActivo=empToggleActivo;
 
 // ══════════════════════════════════════════════
 //  RECETAS — Módulo completo con costeo desde Base de Datos
