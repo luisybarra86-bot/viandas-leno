@@ -1966,7 +1966,8 @@ function empRender() {
           <span class="${emp.activo ? 'emp-badge-on' : 'emp-badge-off'}">${emp.activo ? 'Activo' : 'Inactivo'}</span>
         </div>
         <div class="emp-actions">
-          <button class="emp-btn-edit" onclick="empEdit('${emp.id}')">✏️</button>
+          <button class="emp-btn-edit" onclick="empEdit('${emp.id}')" title="Editar">✏️</button>
+          <button class="btnD" style="padding:5px 8px;font-size:.71rem;border:1.5px solid var(--border);border-radius:7px;cursor:pointer" onclick="empDelete('${emp.id}')" title="Eliminar">🗑</button>
           <button class="emp-btn-tog ${emp.activo ? 'btnD' : 'btnA'}" style="padding:5px 10px;font-size:.71rem" onclick="empToggleActivo('${emp.id}')">${emp.activo ? '⏸' : '▶'}</button>
         </div>
       </div>`;
@@ -2024,6 +2025,21 @@ async function empToggleActivo(id) {
     empRender();
     showToast(emp.activo ? '✅ Empleado activado' : '⏸ Empleado pausado', 'success');
   } catch(e) { emp.activo = !emp.activo; showToast('Error: ' + e.message, 'error'); }
+}
+
+async function empDelete(id) {
+  const emp = DB.empleados.find(e => e.id === id);
+  if (!emp) return;
+  if (!confirm(`¿Eliminar a ${emp.nombre}? Esta acción no se puede deshacer.`)) return;
+  const { db, doc, deleteDoc } = window._fb;
+  try {
+    await deleteDoc(doc(db, 'empleados', id));
+    DB.empleados = DB.empleados.filter(e => e.id !== id);
+    empRender();
+    showToast(`${emp.nombre} eliminado ✅`, 'success');
+  } catch(e) {
+    showToast('Error al eliminar: ' + e.message, 'error');
+  }
 }
 
 function empEdit(id) {
@@ -3640,7 +3656,7 @@ window.pedRenderCatalogo=pedRenderCatalogo;
 document.getElementById('catNewNombre')?.addEventListener('keydown',e=>{if(e.key==='Enter')addMenuCat()});
 window.empAdd=empAdd;window.empRender=empRender;window.empSetFilter=empSetFilter;
 window.empEdit=empEdit;window.empSaveEdit=empSaveEdit;window.empModalClose=empModalClose;
-window.empToggleActivo=empToggleActivo;
+window.empToggleActivo=empToggleActivo;window.empDelete=empDelete;
 
 // ══════════════════════════════════════════════
 //  RECETAS — Módulo completo con costeo desde Base de Datos
