@@ -1,0 +1,41 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "preview-outputs",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "4321", "C:\\Users\\luisy\\Documents\\ClaudeLuis\\Outputs"],
+      "port": 4321
+    },
+    {
+      "name": "pedidos-leno-franquicias",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "4322", "C:\\Users\\luisy\\Documents\\ClaudeLuis\\Proyectos\\pedidos-leno-franquicias"],
+      "port": 4322
+    },
+    {
+      "name": "pedidos-leno-srl",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "4323", "C:\\Users\\luisy\\Documents\\ClaudeLuis\\Proyectos\\pedidos-leno-srl"],
+      "port": 4323
+    },
+    {
+      "name": "basedatos-costos2.0",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "4324", "C:\\Users\\luisy\\Documents\\ClaudeLuis\\Proyectos\\basedatos-costos2.0"],
+      "port": 4324
+    },
+    {
+      "name": "click1986",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "4325", "C:\\Users\\luisy\\Documents\\click1986"],
+      "port": 4325
+    },
+    {
+      "name": "cdp-franquicias",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "4326", "C:\\Users\\luisy\\Documents\\cdp-franquicias"],
+      "port": 4326
+    }
+  ]
+}

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LENO - Elección de Menú</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDLH1Lye1MqA35SVE1y26kEo5IqHbx0vwM",
+  authDomain: "vianda-leno.firebaseapp.com",
+  projectId: "vianda-leno",
+  storageBucket: "vianda-leno.firebasestorage.app",
+  messagingSenderId: "374858829111",
+  appId: "1:374858829111:web:3a66d08bc8f3dd31cdeb2"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+window._fb = { db, doc, getDoc, collection, addDoc, query, where, getDocs, setDoc };
+window._fbReady = true;
+document.dispatchEvent(new Event('fbReady'));
+</script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #F5F5F0;
+  color: #2C3E50;
+  min-height: 100vh;
+  padding: 20px;
+}
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.07);
+  padding: 32px;
+}
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+  border-bottom: 3px solid #B02C24;
+  padding-bottom: 20px;
+}
+.logo { width: 80px; height: auto; margin-bottom: 16px; border-radius: 8px; }
+.title { font-size: 1.5rem; font-weight: 700; color: #B02C24; margin-bottom: 8px; }
+.subtitle { font-size: 0.9rem; color: #7F8C8D; }
+.intro {
+  background: #FFF3EE;
+  border: 1.5px solid rgba(176,44,36,.2);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 28px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #2C3E50;
+}
+.intro p { margin-bottom: 8px; }
+.intro strong { color: #B02C24; }
+.form-group {
+  margin-bottom: 24px;
+}
+.form-group label {
+  display: block;
+  font-size: 0.75rem;
+  color: #7F8C8D;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.form-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #ECEDEE;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #2C3E50;
+  transition: border-color 0.2s;
+}
+.form-group input:focus {
+  outline: none;
+  border-color: #B02C24;
+  box-shadow: 0 0 0 3px rgba(176,44,36,.1);
+}
+.required { color: #E74C3C; }
+.day-section {
+  background: #F9F9F9;
+  border: 1px solid #ECEDEE;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.day-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #B02C24;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.checkbox-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.checkbox-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: #B02C24;
+}
+.checkbox-label {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #2C3E50;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.sucursal-section {
+  background: #F9F9F9;
+  border: 1px solid #ECEDEE;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+.sucursal-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2C3E50;
+  margin-bottom: 12px;
+}
+.sucursal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 24px;
+  font-size: 0.85rem;
+  color: #856404;
+  line-height: 1.5;
+}
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 28px;
+}
+.btnSubmit {
+  flex: 1;
+  padding: 14px;
+  background: #B02C24;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btnSubmit:hover { background: #8B2218; }
+.btnSubmit:active { transform: translateY(1px); }
+.loading { opacity: 0.6; cursor: not-allowed; }
+.error {
+  color: #E74C3C;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+.success-message {
+  display: none;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 16px;
+  border-radius: 10px;
+  text-align: center;
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <img src="logo2.png" alt="LENO" class="logo">
+    <div class="title">LENO - Elección de Menú</div>
+    <div class="subtitle">Menú Semanal</div>
+  </div>
+
+  <div class="intro">
+    <p><strong>👋 Hola chicos!</strong></p>
+    <p>Les presento el menú semanal.</p>
+    <p><strong>👉</strong> Deben seleccionar el menú para cada día que trabajen, si así lo desean.</p>
+    <p><strong>👉</strong> Indiquen a qué sucursal debe enviarse la vianda, teniendo en cuenta donde trabajen ese día.</p>
+    <p style="margin-top: 12px;"><strong>📌 Recordá:</strong> una vez enviado el formulario no se podrá modificar la información. La opción "Menú Vegetariano" está solo disponible para el personal vegetariano.</p>
+  </div>
+
+  <form id="eleccionForm">
+    <div class="form-group">
+      <label>Nombre y Apellido <span class="required">*</span></label>
+      <input type="text" id="nombre" required placeholder="Tu nombre completo">
+      <div class="error" id="nombreError"></div>
+    </div>
+
+    <div id="diasContainer"></div>
+
+    <div class="sucursal-section">
+      <div class="sucursal-title">Sucursal <span class="required">*</span></div>
+      <div class="sucursal-options" id="sucursalesContainer"></div>
+      <div class="error" id="sucursalError"></div>
+    </div>
+
+    <div class="warning">
+      ⚠️ <strong>Importante:</strong> Una vez que envíes el formulario, no podrás modificar la información. Verifica todos tus datos antes de enviar.
+    </div>
+
+    <div class="button-group">
+      <button type="submit" class="btnSubmit">📤 Enviar Formulario</button>
+    </div>
+  </form>
+
+  <div class="success-message" id="successMessage">
+    ✅ Formulario enviado correctamente. ¡Gracias!
+  </div>
+</div>
+
+<script>
+const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const SUCURSALES = [
+  { id: 'acq', nombre: 'Suc. Aconquija' },
+  { id: 'bn', nombre: 'Suc. Barrio Norte' },
+  { id: 'tv', nombre: 'Suc. Tafi viejo' },
+  { id: 'cdp', nombre: 'Centro de Producción' },
+  { id: 'piz', nombre: 'Pizzería' },
+  { id: 'adm', nombre: 'Administración' }
+];
+
+let menuData = null;
+let selecciones = {};
+
+async function init() {
+  await new Promise(resolve => {
+    if (window._fbReady) resolve();
+    else document.addEventListener('fbReady', resolve);
+  });
+
+  const stored = localStorage.getItem('menuPublicado');
+  if (stored) {
+    menuData = JSON.parse(stored);
+    renderForm();
+  } else {
+    document.getElementById('eleccionForm').innerHTML = '<p style="text-align:center;color:#7F8C8D">Aún no hay menú publicado.</p>';
+  }
+}
+
+function renderForm() {
+  const diasContainer = document.getElementById('diasContainer');
+  diasContainer.innerHTML = '';
+
+  const fechaInicio = new Date(menuData.inicio + 'T00:00:00');
+
+  DIAS.forEach((dia, idx) => {
+    const fecha = new Date(fechaInicio);
+    fecha.setDate(fecha.getDate() + idx);
+    const fechaFormato = fecha.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+
+    const menuEst = menuData.dias[idx]?.n || '—';
+    const menuVeg = menuData.dias[idx]?.v || '—';
+
+    const sucursalesHtml = SUCURSALES.map(suc =>
+      `<label style="margin-left: 12px;">
+        <input type="radio" name="suc_dia_${idx}" value="${suc.id}">
+        <span class="checkbox-label" style="margin-left: 6px;">${suc.nombre}</span>
+      </label>`
+    ).join('');
+
+    const html = `
+      <div class="day-section">
+        <div class="day-title">📅 ${dia} ${fechaFormato}</div>
+        <div class="menu-options">
+          <label class="checkbox-group">
+            <input type="checkbox" name="dia_${idx}_est" data-dia="${idx}" data-tipo="est">
+            <span class="checkbox-label"><strong>🍽 Menú Estándar:</strong> ${menuEst}</span>
+          </label>
+          <label class="checkbox-group">
+            <input type="checkbox" name="dia_${idx}_veg" data-dia="${idx}" data-tipo="veg">
+            <span class="checkbox-label"><strong>🥗 Menú Vegetariano:</strong> ${menuVeg}</span>
+          </label>
+        </div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ECEDEE;">
+          <div style="font-size: 0.85rem; font-weight: 600; color: #2C3E50; margin-bottom: 8px;">Sucursal de envío:</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${sucursalesHtml}
+          </div>
+        </div>
+      </div>
+    `;
+    diasContainer.innerHTML += html;
+  });
+
+  // Listeners para menús
+  document.querySelectorAll('input[data-dia]').forEach(inp => {
+    inp.addEventListener('change', (e) => {
+      const dia = e.target.dataset.dia;
+      const tipo = e.target.dataset.tipo;
+      const key = `dia_${dia}_${tipo}`;
+
+      if (e.target.checked) {
+        selecciones[key] = true;
+      } else {
+        delete selecciones[key];
+      }
+    });
+  });
+
+  // Ocultar sección de sucursal global
+  const sucursalSection = document.querySelector('.sucursal-section');
+  if (sucursalSection) sucursalSection.style.display = 'none';
+
+  document.getElementById('eleccionForm').addEventListener('submit', enviarFormulario);
+}
+
+async function enviarFormulario(e) {
+  e.preventDefault();
+
+  const nombre = document.getElementById('nombre').value.trim();
+
+  if (!nombre) {
+    document.getElementById('nombreError').textContent = 'El nombre es obligatorio';
+    return;
+  }
+
+  // Validar que al menos un día tenga menú y sucursal
+  let tieneAlgunaSeleccion = false;
+  for (let i = 0; i < 7; i++) {
+    const estChecked = document.querySelector(`input[name="dia_${i}_est"]`)?.checked;
+    const vegChecked = document.querySelector(`input[name="dia_${i}_veg"]`)?.checked;
+    const sucChecked = document.querySelector(`input[name="suc_dia_${i}"]:checked`);
+    if ((estChecked || vegChecked) && sucChecked) {
+      tieneAlgunaSeleccion = true;
+      break;
+    }
+  }
+
+  if (!tieneAlgunaSeleccion) {
+    alert('Debes seleccionar al menos un menú con su sucursal de envío');
+    return;
+  }
+
+  try {
+    const { db, collection, query, where, getDocs, addDoc } = window._fb;
+
+    // Calcular las fechas de cada día
+    const fechas = [];
+    const fechaInicio = new Date(menuData.inicio + 'T00:00:00');
+    for (let i = 0; i < 7; i++) {
+      const fecha = new Date(fechaInicio);
+      fecha.setDate(fecha.getDate() + i);
+      const yyyy = fecha.getFullYear();
+      const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+      const dd = String(fecha.getDate()).padStart(2, '0');
+      fechas.push(`${yyyy}-${mm}-${dd}`);
+    }
+
+    // Construir elecciones por día con menú y sucursal
+    const eleccionesObj = {};
+    DIAS.forEach((dia, idx) => {
+      const estChecked = document.querySelector(`input[name="dia_${idx}_est"]`)?.checked;
+      const vegChecked = document.querySelector(`input[name="dia_${idx}_veg"]`)?.checked;
+      const sucursal = document.querySelector(`input[name="suc_dia_${idx}"]:checked`)?.value;
+
+      const menuEst = menuData.dias[idx]?.n || '';
+      const menuVeg = menuData.dias[idx]?.v || '';
+
+      let menuTexto = '';
+      if (estChecked && menuEst) {
+        menuTexto += menuEst;
+      }
+      if (vegChecked && menuVeg) {
+        if (menuTexto) menuTexto += ' + ';
+        menuTexto += menuVeg;
+      }
+
+      if (menuTexto && sucursal) {
+        eleccionesObj[fechas[idx]] = {
+          menu: menuTexto,
+          sucursal: sucursal
+        };
+      }
+    });
+
+    // Buscar si el usuario ya existe
+    const colRef = collection(db, 'eleccionesForm');
+    const q = query(colRef, where('nombre', '==', nombre));
+    const snap = await getDocs(q);
+
+    if (snap.size > 0) {
+      const docId = snap.docs[0].id;
+      const existingData = snap.docs[0].data();
+      const elecciones = existingData.elecciones || {};
+      Object.assign(elecciones, eleccionesObj);
+
+      const { doc, setDoc } = window._fb;
+      const docSnap = doc(db, 'eleccionesForm', docId);
+      await setDoc(docSnap, { nombre, elecciones, actualizado: new Date().toISOString() }, { merge: true });
+    } else {
+      await addDoc(colRef, {
+        nombre,
+        elecciones: eleccionesObj,
+        creadoEn: new Date().toISOString()
+      });
+    }
+
+    document.getElementById('eleccionForm').style.display = 'none';
+    document.getElementById('successMessage').style.display = 'block';
+  } catch (err) {
+    alert('Error al enviar: ' + err.message);
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>
