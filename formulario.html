@@ -278,7 +278,8 @@ function renderForm() {
 
   const fechaInicio = new Date(menuData.inicio + 'T00:00:00');
 
-  DIAS.forEach((dia, idx) => {
+  // Solo mostrar de lunes a sábado (índices 0-5, sin domingo que es índice 6)
+  DIAS.slice(0, 6).forEach((dia, idx) => {
     const fecha = new Date(fechaInicio);
     fecha.setDate(fecha.getDate() + idx);
     const fechaFormato = fecha.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
@@ -290,6 +291,18 @@ function renderForm() {
       `<label style="margin-left: 12px;">
         <input type="radio" name="suc_dia_${idx}" value="${suc.id}">
         <span class="checkbox-label" style="margin-left: 6px;">${suc.nombre}</span>
+      </label>`
+    ).join('');
+
+    const turnosHtml = [
+      { id: 'manana', nombre: 'Mañana' },
+      { id: 'mediodia', nombre: 'Mediodía' },
+      { id: 'tarde', nombre: 'Tarde' },
+      { id: 'noche', nombre: 'Noche' }
+    ].map(turno =>
+      `<label style="margin-left: 12px;">
+        <input type="radio" name="turno_dia_${idx}" value="${turno.id}">
+        <span class="checkbox-label" style="margin-left: 6px;">${turno.nombre}</span>
       </label>`
     ).join('');
 
@@ -305,6 +318,12 @@ function renderForm() {
             <input type="checkbox" name="dia_${idx}_veg" data-dia="${idx}" data-tipo="veg">
             <span class="checkbox-label"><strong>🥗 Menú Vegetariano:</strong> ${menuVeg}</span>
           </label>
+        </div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ECEDEE;">
+          <div style="font-size: 0.85rem; font-weight: 600; color: #2C3E50; margin-bottom: 8px;">Turno <span class="required">*</span>:</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${turnosHtml}
+          </div>
         </div>
         <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ECEDEE;">
           <div style="font-size: 0.85rem; font-weight: 600; color: #2C3E50; margin-bottom: 8px;">Sucursal de envío:</div>
@@ -349,30 +368,31 @@ async function enviarFormulario(e) {
     return;
   }
 
-  // Validar que al menos un día tenga menú y sucursal
+  // Validar que al menos un día tenga menú, turno y sucursal (lunes a sábado)
   let tieneAlgunaSeleccion = false;
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 6; i++) {
     const estChecked = document.querySelector(`input[name="dia_${i}_est"]`)?.checked;
     const vegChecked = document.querySelector(`input[name="dia_${i}_veg"]`)?.checked;
+    const turnoChecked = document.querySelector(`input[name="turno_dia_${i}"]:checked`);
     const sucChecked = document.querySelector(`input[name="suc_dia_${i}"]:checked`);
-    if ((estChecked || vegChecked) && sucChecked) {
+    if ((estChecked || vegChecked) && turnoChecked && sucChecked) {
       tieneAlgunaSeleccion = true;
       break;
     }
   }
 
   if (!tieneAlgunaSeleccion) {
-    alert('Debes seleccionar al menos un menú con su sucursal de envío');
+    alert('Debes seleccionar al menos un menú con turno y sucursal de envío');
     return;
   }
 
   try {
     const { db, collection, query, where, getDocs, addDoc } = window._fb;
 
-    // Calcular las fechas de cada día
+    // Calcular las fechas de cada día (lunes a sábado)
     const fechas = [];
     const fechaInicio = new Date(menuData.inicio + 'T00:00:00');
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 6; i++) {
       const fecha = new Date(fechaInicio);
       fecha.setDate(fecha.getDate() + i);
       const yyyy = fecha.getFullYear();
@@ -381,11 +401,12 @@ async function enviarFormulario(e) {
       fechas.push(`${yyyy}-${mm}-${dd}`);
     }
 
-    // Construir elecciones por día con menú y sucursal
+    // Construir elecciones por día con menú, turno y sucursal (lunes a sábado)
     const eleccionesObj = {};
-    DIAS.forEach((dia, idx) => {
+    DIAS.slice(0, 6).forEach((dia, idx) => {
       const estChecked = document.querySelector(`input[name="dia_${idx}_est"]`)?.checked;
       const vegChecked = document.querySelector(`input[name="dia_${idx}_veg"]`)?.checked;
+      const turno = document.querySelector(`input[name="turno_dia_${idx}"]:checked`)?.value;
       const sucursal = document.querySelector(`input[name="suc_dia_${idx}"]:checked`)?.value;
 
       const menuEst = menuData.dias[idx]?.n || '';
@@ -400,9 +421,17 @@ async function enviarFormulario(e) {
         menuTexto += menuVeg;
       }
 
-      if (menuTexto && sucursal) {
+      const turnoNombre = turno ? {
+        'manana': 'Mañana',
+        'mediodia': 'Mediodía',
+        'tarde': 'Tarde',
+        'noche': 'Noche'
+      }[turno] : '';
+
+      if (menuTexto && turno && sucursal) {
         eleccionesObj[fechas[idx]] = {
           menu: menuTexto,
+          turno: turnoNombre,
           sucursal: sucursal
         };
       }
