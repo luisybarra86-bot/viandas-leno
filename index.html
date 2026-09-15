@@ -888,7 +888,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
           <span class="tab-dot"></span><span class="nav-icon">👨‍💼</span> Personal
         </button>
         <button class="tab" onclick="showPage('menus',this)">
-          <span class="tab-dot"></span><span class="nav-icon">📅</span> Menú Semanal
+          <span class="tab-dot"></span><span class="nav-icon">📋</span> Menú Semanal
         </button>
         <button class="tab" onclick="showPage('catalogo',this)">
           <span class="tab-dot"></span><span class="nav-icon">🗂️</span> Catálogo Menús
@@ -908,7 +908,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
           <span class="tab-dot"></span><span class="nav-icon">☑️</span> Elecciones
         </button>
         <button class="tab" onclick="showPage('remito',this)">
-          <span class="tab-dot"></span><span class="nav-icon">🧾</span> Remito de Venta
+          <span class="tab-dot"></span><span class="nav-icon">📮</span> Remito de Venta
         </button>
         <hr class="nav-divider">
         <div class="nav-group-label">Sistema</div>
@@ -962,7 +962,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
               </div>
             </div>
             <div class="dash-kpi-card">
-              <div class="dkpi-icon">👥</div>
+              <div class="dkpi-icon">👫</div>
               <div>
                 <div class="dkpi-label">Con Elección</div>
                 <div class="dkpi-value" id="dash-kpi-emp">—</div>
@@ -1054,7 +1054,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
 
         <!-- ── MENÚ SEMANAL ── -->
         <div id="page-menus" class="page">
-          <div class="page-title"><span class="title-icon-box">📅</span> Planificación <span class="accent">Semanal</span></div>
+          <div class="page-title"><span class="title-icon-box">📋</span> Planificación <span class="accent">Semanal</span></div>
           <div class="card">
             <div class="sem-add-row">
               <div>
@@ -1127,7 +1127,7 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
 
         <!-- ── REMITO DE VENTA ── -->
         <div id="page-remito" class="page">
-          <div class="page-title"><span class="title-icon-box">🧾</span> Remito de <span class="accent">Venta</span></div>
+          <div class="page-title"><span class="title-icon-box">📮</span> Remito de <span class="accent">Venta</span></div>
 
           <!-- Barra de controles -->
           <div class="rCtrl">
@@ -1191,6 +1191,26 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
               <h3 style="margin:0">📋 Historial de remitos</h3>
               <button class="btnD" style="padding:6px 12px;font-size:.78rem" onclick="remCargarHistorial()">↻ Actualizar</button>
             </div>
+
+            <!-- Filtros -->
+            <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-end">
+              <div>
+                <label style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">Sucursal</label>
+                <select id="remHistSuc" onchange="remCargarHistorial()" style="padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.85rem">
+                  <option value="">Todas</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">Desde</label>
+                <input type="date" id="remHistFrom" onchange="remCargarHistorial()" style="padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.85rem">
+              </div>
+              <div>
+                <label style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">Hasta</label>
+                <input type="date" id="remHistTo" onchange="remCargarHistorial()" style="padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.85rem">
+              </div>
+              <button class="btnG" style="padding:8px 14px;font-size:.78rem" onclick="remExportHistExcel()">⬇ Descargar Excel</button>
+            </div>
+
             <div id="remHistorial"><div style="color:var(--muted);font-size:.83rem">Cargando…</div></div>
           </div>
 
@@ -1449,7 +1469,8 @@ let DB = {
   semanas:    D_SEMANAS,
   registros:  {},
   asistencia: {},
-  creds:      {user:'admin', pass:'leno2799'}
+  creds:      {user:'admin', pass:'leno2799'},
+  recetas:    {}  // {nombreMenu: {plato1: [{insumo, cantidad, unidad, precio}], plato2: [...]}}
 };
 
 let fb, saveTimer = null;
@@ -1475,15 +1496,11 @@ async function fbLoad() {
       DB.viandas    = remote.viandas?.length ? remote.viandas : D_VIANDAS;
       // IMPORTANTE: NO cargar D_SEMANAS como fallback - solo usar lo que está en Firebase
       DB.semanas    = Array.isArray(remote.semanas) ? remote.semanas : [];
+      console.log('fbLoad - remote.semanas:', remote.semanas?.length, 'DB.semanas asignadas:', DB.semanas.length);
       DB.registros  = remote.registros && Object.keys(remote.registros).length ? remote.registros : {};
       DB.asistencia = remote.asistencia && Object.keys(remote.asistencia).length ? remote.asistencia : {};
       DB.creds      = remote.creds ? remote.creds : {user:'admin', pass:'leno2799'};
-      // LIMPIAR SEMANAS PREDETERMINADAS SI LAS HAY
-      if (DB.semanas && DB.semanas.length > 0) {
-        console.log('Limpiando semanas predeterminadas...');
-        DB.semanas = [];
-        await fbSaveNow();
-      }
+      DB.recetas    = remote.recetas && typeof remote.recetas === 'object' ? remote.recetas : {};
       // Si empleados era vacío y acabamos de usar D_EMP, guardar
       if (!empsFromRemote && DB.empleados.length > 0) {
         await fbSaveNow();
@@ -1498,10 +1515,68 @@ async function fbLoad() {
   }
 }
 
+// Listener en tiempo real para sincronización automática
+function fbSetupRealtimeListener() {
+  const {db, doc, onSnapshot} = window._fb;
+  try {
+    onSnapshot(doc(db, 'app', 'data'), (snap) => {
+      if (snap.exists()) {
+        const remote = snap.data();
+        const cambiosDetectados = {};
+
+        // Detectar cambios
+        if (JSON.stringify(DB.semanas) !== JSON.stringify(remote.semanas)) {
+          cambiosDetectados.semanas = true;
+        }
+        if (JSON.stringify(DB.empleados) !== JSON.stringify(remote.empleados)) {
+          cambiosDetectados.empleados = true;
+        }
+        if (JSON.stringify(DB.viandas) !== JSON.stringify(remote.viandas)) {
+          cambiosDetectados.viandas = true;
+        }
+
+        // Actualizar DB con los cambios de Firebase
+        DB.empleados  = remote.empleados?.length ? remote.empleados : DB.empleados;
+        DB.sucursales = remote.sucursales?.length ? remote.sucursales : DB.sucursales;
+        DB.viandas    = remote.viandas?.length ? remote.viandas : DB.viandas;
+        DB.semanas    = Array.isArray(remote.semanas) ? remote.semanas : DB.semanas;
+        DB.registros  = remote.registros || DB.registros;
+        DB.asistencia = remote.asistencia || DB.asistencia;
+        DB.recetas    = (typeof remote.recetas === 'object' && remote.recetas) ? remote.recetas : DB.recetas;
+
+        if (Object.keys(cambiosDetectados).length > 0) {
+          console.log('🔁 Cambios detectados en tiempo real:', cambiosDetectados);
+
+          // Auto-refresh automático de secciones activas
+          const activePage = document.querySelector('.page:not([style*="display: none"])');
+          if (activePage) {
+            if (activePage.id === 'page-menuSem' && cambiosDetectados.semanas) {
+              console.log('🔁 Auto-refresh: Menú Semanal');
+              renderMenuSem();
+            }
+            if (activePage.id === 'page-personal' && cambiosDetectados.empleados) {
+              console.log('🔁 Auto-refresh: Personal');
+              renderPersonal?.();
+            }
+            if (activePage.id === 'page-viandas' && cambiosDetectados.viandas) {
+              console.log('🔁 Auto-refresh: Viandas');
+              renderViandas?.();
+            }
+          }
+        }
+      }
+    });
+    console.log('✅ Listener en tiempo real configurado - Auto-refresh activo');
+  } catch(e) {
+    console.error('Error configurando listener:', e);
+  }
+}
+
 async function fbSaveNow() {
   const {db, doc, setDoc} = window._fb;
   try {
     setSyncBadge('saving');
+    console.log('fbSaveNow - Guardando a Firebase:', {semanas: DB.semanas?.length});
     await setDoc(doc(db, 'app', 'data'), {
       sucursales: DB.sucursales,
       empleados:  DB.empleados,
@@ -1509,19 +1584,23 @@ async function fbSaveNow() {
       semanas:    DB.semanas,
       registros:  DB.registros,
       asistencia: DB.asistencia,
-      creds:      DB.creds
-    });
+      creds:      DB.creds,
+      recetas:    DB.recetas
+    }, {merge: true});
+    console.log('✅ Guardado en Firebase');
     setSyncBadge('ok');
   } catch(e) {
-    console.error('Firebase save error:', e);
+    console.error('❌ Firebase save error:', e);
     setSyncBadge('err');
+    showToast('Error al guardar: '+e.message,'error');
   }
 }
 
 function save() {
   setSyncBadge('saving');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(fbSaveNow, 800);
+  // Guardar INMEDIATAMENTE sin delay para sincronización en tiempo real
+  fbSaveNow();
 }
 
 function setSyncBadge(state) {
@@ -1529,9 +1608,21 @@ function setSyncBadge(state) {
   badges.forEach(el => {
     if (!el) return;
     const dot = '<span class="sync-dot"></span>';
-    if (state === 'ok')     { el.className='syncBadge ok';     el.innerHTML=dot+' Sincronizado'; }
-    if (state === 'saving') { el.className='syncBadge saving'; el.innerHTML=dot+' Guardando...'; }
-    if (state === 'err')    { el.className='syncBadge err';    el.innerHTML=dot+' Sin conexión'; }
+    if (state === 'ok') {
+      el.className='syncBadge ok';
+      el.innerHTML=dot+' ✅ Sincronizado';
+      el.style.animation = 'none';
+    }
+    if (state === 'saving') {
+      el.className='syncBadge saving';
+      el.innerHTML=dot+' 💾 Guardando...';
+      el.style.animation = 'pulse 1s infinite';
+    }
+    if (state === 'err') {
+      el.className='syncBadge err';
+      el.innerHTML=dot+' ❌ Error de conexión';
+      el.style.animation = 'none';
+    }
   });
 }
 
@@ -1546,6 +1637,8 @@ document.addEventListener('fbReady', async () => {
     DB.empleados = D_EMP;
     await fbSaveNow();
   }
+  // Configurar listener en tiempo real para sincronización automática
+  fbSetupRealtimeListener();
   document.getElementById('loader').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
 });
@@ -1625,23 +1718,38 @@ function showPage(id,btn){
 let selSuc=null, delMode=false;
 function initApp(){
   const t=todayStr();
-  document.getElementById('regDate').value=t;
-  document.getElementById('rDDate').value=t;
-  document.getElementById('rMMonth').value=t.slice(0,7);
-  document.getElementById('elecDate').value=t;
-  document.getElementById('semFecha').value=getLunes(t);
+  // Protección: asignar valores solo si los elementos existen
+  if(document.getElementById('regDate')) document.getElementById('regDate').value=t;
+  if(document.getElementById('rDDate')) document.getElementById('rDDate').value=t;
+  if(document.getElementById('rMMonth')) document.getElementById('rMMonth').value=t.slice(0,7);
+  if(document.getElementById('elecDate')) document.getElementById('elecDate').value=t;
+  if(document.getElementById('semFecha')) document.getElementById('semFecha').value=getLunes(t);
   renderSucGrid(); populateSels();
   initDashboard();
 }
 function todayStr(){return new Date().toISOString().slice(0,10);}
-function getLunes(d){const dt=new Date(d+'T00:00:00'),dw=dt.getDay(),df=dw===0?-6:1-dw;dt.setDate(dt.getDate()+df);return dt.toISOString().slice(0,10);}
+function getLunes(d){
+  // Parsear la fecha sin zona horaria
+  const [year, month, day] = d.split('-').map(Number);
+  const dt = new Date(year, month-1, day);
+  const dw = dt.getDay();
+  const diff = dw === 0 ? -6 : 1 - dw;
+  dt.setDate(dt.getDate() + diff);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const da = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${da}`;
+}
 function fmtDate(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
 
 // ══════════════════════════════════════════════
 //  SUCURSALES
 // ══════════════════════════════════════════════
 function renderSucGrid(){
-  const g=document.getElementById('sucGrid'),f=document.getElementById('regDate').value;
+  const g=document.getElementById('sucGrid');
+  if(!g) return; // Protección: si no existe sucGrid, salir
+  const regDateEl = document.getElementById('regDate');
+  const f = regDateEl ? regDateEl.value : todayStr();
   g.innerHTML='';
   DB.sucursales.forEach(s=>{
     const tot=getTotSuc(s.id,f),el=document.createElement('div');
@@ -1739,7 +1847,9 @@ function delVianda(name){
   Object.values(DB.registros).forEach(d=>Object.values(d).forEach(s=>delete s[name]));
   save();renderVGrid();
 }
-document.getElementById('newVname').addEventListener('keydown',e=>{if(e.key==='Enter')addVianda()});
+// Protección: solo agregar listener si el elemento existe
+const newVnameEl = document.getElementById('newVname');
+if(newVnameEl) newVnameEl.addEventListener('keydown',e=>{if(e.key==='Enter')addVianda()});
 
 // ══════════════════════════════════════════════
 //  CATÁLOGO DE MENÚS
@@ -1758,9 +1868,11 @@ function renderMenuCatalogo(){
   let h='';
   viandas.forEach(v=>{
     const idx=DB.viandas.indexOf(v);
+    const tieneReceta = DB.recetas[v] && DB.recetas[v].platos && DB.recetas[v].platos.length > 0;
     h+=`<div class="cat-item" id="cat-item-${idx}">
       <span class="cat-name">${v}</span>
       <div class="cat-actions">
+        <button class="btnB cat-btn" onclick="recEditarReceta('${v.replace(/'/g,"\\'")}')" title="Receta${tieneReceta?':'+DB.recetas[v].platos.length+' platos':''}" style="background:${tieneReceta?'#ff9800':'inherit'}">🍳</button>
         <button class="btnB cat-btn" onclick="editMenuCat(${idx})" title="Editar">✏</button>
         <button class="btnD cat-btn" onclick="delMenuCat(${idx})" title="Eliminar" style="border-color:var(--danger);color:var(--danger)">×</button>
       </div>
@@ -2087,6 +2199,7 @@ function renderMenuSem(){
         <div class="sem-range">📅 ${fmtDate(sem.inicio)} → ${fmtDate(fin.toISOString().slice(0,10))}</div>
         <div class="sem-actions">
           <button class="btn-publicar ${yaPublicado?'publicado':''}" data-inicio="${sem.inicio}">${yaPublicado?'✅ Publicado':'📤 Publicar en Form'}</button>
+          ${yaPublicado?`<button class="btnB" style="font-size:.72rem;padding:5px 12px" data-inicio="${sem.inicio}" onclick="verLinkSemana('${sem.inicio}')">🔗 Ver Link</button>`:''}
           <button class="btnD del-sem" style="font-size:.72rem;padding:5px 12px;border-color:var(--danger);color:var(--danger)" data-inicio="${sem.inicio}">✕</button>
         </div>
       </div>
@@ -2108,17 +2221,30 @@ function renderMenuSem(){
     const pubBtn=row.querySelector('.btn-publicar');
     if(!yaPublicado) pubBtn.addEventListener('click',()=>publicarSemana(sem.inicio));
     row.querySelectorAll('input[data-inicio]').forEach(inp=>{
+      inp.addEventListener('input',e=>updDia(e.target.dataset.inicio,parseInt(e.target.dataset.di),e.target.dataset.campo,e.target.value));
       inp.addEventListener('change',e=>updDia(e.target.dataset.inicio,parseInt(e.target.dataset.di),e.target.dataset.campo,e.target.value));
+      inp.addEventListener('blur',e=>updDia(e.target.dataset.inicio,parseInt(e.target.dataset.di),e.target.dataset.campo,e.target.value));
     });
     el.appendChild(row);
   });
 }
 
 function addSemana(){
-  const f=document.getElementById('semFecha').value;if(!f){showToast('Seleccioná una fecha','warn');return;}
-  const l=getLunes(f);if(DB.semanas.find(s=>s.inicio===l)){showToast('Esa semana ya existe','warn');return;}
+  const f=document.getElementById('semFecha').value;
+  if(!f){
+    showToast('⚠️ Seleccioná una fecha para crear la semana','warn');
+    return;
+  }
+  const l=getLunes(f);
+  if(DB.semanas.find(s=>s.inicio===l)){
+    showToast('⚠️ Esa semana ya existe. Seleccioná otra fecha','warn');
+    return;
+  }
   DB.semanas.push({inicio:l,dias:[null,null,null,null,null,null,null]});
-  save();renderMenuSem();showToast('Semana agregada','success');
+  save();
+  renderMenuSem();
+  showToast('✅ Semana creada: '+l,'success');
+  console.log('✅ Nueva semana agregada:', l);
 }
 
 function delSem(inicio){
@@ -2135,32 +2261,69 @@ function updDia(inicio,di,campo,v){
     s.dias[di]={n:viejo,v:''};
   }
   s.dias[di][campo]=v.trim()||'';
+  console.log(`✅ Día ${di} (${campo}): "${s.dias[di][campo]}"`, s.dias[di]);
   save();
 }
 
 async function publicarSemana(inicio){
   const sem=DB.semanas.find(s=>s.inicio===inicio);
-  if(!sem){showToast('Semana no encontrada','error');return;}
+  if(!sem){
+    showToast('❌ Semana no encontrada','error');
+    return;
+  }
+
+  // Validar que haya menús
+  const tieneMenus = sem.dias.some(d => d && (d.n || d.v));
+  if(!tieneMenus){
+    showToast('⚠️ Agregá menús a la semana antes de publicar','warn');
+    return;
+  }
   const {db,collection,addDoc}=window._fb;
   try{
-    await addDoc(collection(db,'publicaciones'),{
+    console.log('publicarSemana - inicio:', inicio);
+    console.log('publicarSemana - sem.dias:', sem.dias);
+
+    // Limpiar días: convertir null a {n:'', v:''}
+    const diasLimpios = sem.dias.map((dia, idx) => {
+      let resultado = {n: '', v: ''};
+      if (!dia) {
+        resultado = {n: '', v: ''};
+      } else if (typeof dia === 'string') {
+        resultado = {n: dia, v: ''};
+      } else if (dia.n || dia.v) {
+        resultado = {n: dia.n || '', v: dia.v || ''};
+      }
+      console.log(`publicarSemana - Día ${idx}:`, resultado);
+      return resultado;
+    });
+
+    console.log('publicarSemana - diasLimpios:', diasLimpios);
+
+    const pubDoc = {
       semanaInicio:inicio,
-      dias:sem.dias,
+      dias:diasLimpios,
       pendiente:true,
       creadoEn:new Date().toISOString()
-    });
+    };
+
+    console.log('publicarSemana - Guardando:', pubDoc);
+    await addDoc(collection(db,'publicaciones'), pubDoc);
+    console.log('✅ Publicado en Firebase');
+    showToast('✅ Semana publicada correctamente','success');
+
     sem.publicado=true;
     save();
     renderMenuSem();
 
-    // Limpiar y guardar datos frescos en localStorage
-    localStorage.removeItem('menuPublicado');
+    // Generar link con el semanaInicio como parámetro
     setTimeout(() => {
-      localStorage.setItem('menuPublicado', JSON.stringify({inicio, dias: sem.dias}));
-      const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/formulario.html';
+      const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/formulario.html?semana=' + inicio;
       mostrarMensajePublicacion(baseUrl);
-    }, 100);
-  }catch(e){showToast('Error al publicar: '+e.message,'error');}
+    }, 300);
+  }catch(e){
+    showToast('❌ Error al publicar: '+e.message,'error');
+    console.error('Error publicarSemana:', e);
+  }
 }
 
 function mostrarMensajePublicacion(mensaje){
@@ -2188,6 +2351,15 @@ function copiarMensaje(texto){
 }
 
 window.publicarSemana=publicarSemana;
+
+function verLinkSemana(inicio){
+  const sem=DB.semanas.find(s=>s.inicio===inicio);
+  if(!sem){showToast('Semana no encontrada','error');return;}
+  // El formulario carga automáticamente desde Firebase, así que el link es simple
+  const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/formulario.html';
+  mostrarMensajePublicacion(baseUrl);
+}
+window.verLinkSemana=verLinkSemana;
 
 // ══════════════════════════════════════════════
 //  INFORMES
@@ -2471,9 +2643,12 @@ function populateSels(){
 //  ELECCIONES DEL FORMULARIO
 // ══════════════════════════════════════════════
 async function renderElecciones() {
-  const fecha = document.getElementById('elecDate').value;
-  const sf    = document.getElementById('elecSuc').value;
-  const el    = document.getElementById('elecContent');
+  const elecDateEl = document.getElementById('elecDate');
+  const elecSucEl = document.getElementById('elecSuc');
+  const el = document.getElementById('elecContent');
+  if (!el) return; // Protección
+  const fecha = elecDateEl ? elecDateEl.value : '';
+  const sf = elecSucEl ? elecSucEl.value : '';
   if (!fecha) { el.innerHTML = '<div class="empty">Seleccioná una fecha</div>'; return; }
   el.innerHTML = '<div class="empty">🔄 Cargando desde Firebase...</div>';
   try {
@@ -2495,6 +2670,7 @@ async function renderElecciones() {
           docId: docSnap.id,
           nombre,
           menu: e.menu,
+          turno: e.turno,
           sucursal: e.sucursal,
           sucNombre: getSucNombre(e.sucursal)
         });
@@ -2520,7 +2696,7 @@ async function renderElecciones() {
       h += '<div class="sCard"><div class="sl">'+(suc?suc.emoji:'')+' '+s+'</div><div class="sv">'+c+'</div><div class="ss">pedidos</div></div>';
     });
     h += '</div>';
-    h += '<div class="card"><div class="card-title">👥 Detalle de elecciones</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Empleado</th><th>Sucursal</th><th>Menú elegido</th><th>Acciones</th></tr></thead><tbody>';
+    h += '<div class="card"><div class="card-title">👥 Detalle de elecciones</div><div class="tblWrap"><table class="tbl"><thead><tr><th>Empleado</th><th>Sucursal</th><th>Turno</th><th>Menú elegido</th><th>Acciones</th></tr></thead><tbody>';
 
     rows.forEach(r => {
       const suc = DB.sucursales.find(x=>x.id===r.sucursal);
@@ -2528,6 +2704,7 @@ async function renderElecciones() {
       h += `<tr>
         <td>${r.nombre}</td>
         <td>${sucDisplay}</td>
+        <td>${r.turno || '-'}</td>
         <td>${r.menu}</td>
         <td style="white-space:nowrap;">
           <button class="btn-editar-elec" data-doc-id="${r.docId}" data-fecha="${fecha}" data-nombre="${r.nombre}" data-sucursal="${r.sucursal}" data-menu="${r.menu}" style="padding:4px 8px;font-size:0.8rem;margin-right:4px;background:#B02C24;color:#fff;border:none;border-radius:4px;cursor:pointer;">✏ Editar</button>
@@ -2880,6 +3057,13 @@ async function remInit(){
     DB.sucursales.forEach(s => { sucSel.innerHTML += `<option value="${s.id}">${s.emoji} ${s.nombre}</option>`; });
     sucSel.value = curVal;
 
+    // Llenar select de sucursales en historial
+    const sucHistSel = document.getElementById('remHistSuc');
+    if(sucHistSel){
+      sucHistSel.innerHTML = '<option value="">Todas</option>';
+      DB.sucursales.forEach(s => { sucHistSel.innerHTML += `<option value="${s.id}">${s.emoji} ${s.nombre}</option>`; });
+    }
+
     console.log('Llamando remRenderPersonal...');
     remRenderPersonal();
     console.log('Llamando remRenderVGrid...');
@@ -3081,8 +3265,18 @@ async function remCargarHistorial(){
   try {
     const {db,collection,getDocs}=window._fb;
     const snap=await getDocs(collection(db,'remitos'));
-    const docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+    let docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
     docs.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+    // Aplicar filtros
+    const sucursal=document.getElementById('remHistSuc').value;
+    const fechaFrom=document.getElementById('remHistFrom').value;
+    const fechaTo=document.getElementById('remHistTo').value;
+
+    if(sucursal){docs=docs.filter(d=>d.sucursal===sucursal);}
+    if(fechaFrom){docs=docs.filter(d=>d.fecha>=fechaFrom);}
+    if(fechaTo){docs=docs.filter(d=>d.fecha<=fechaTo);}
+
     if(!docs.length){el.innerHTML='<div style="color:var(--muted);font-size:.83rem;padding:8px 0">Sin remitos guardados aún.</div>';return;}
     let h='<div class="tblWrap"><table class="rem-hist-tbl"><thead><tr><th>Nro.</th><th>Fecha</th><th>Sucursal</th><th>Total</th><th>Personal</th><th></th></tr></thead><tbody>';
     docs.forEach(d=>{
@@ -3139,6 +3333,65 @@ function remExportExcel(){
   const d=_remGetData();
   if(!d.rows.length){showToast('Agregá al menos una vianda','warn');return;}
   _remDoExcel(d);
+}
+
+async function remExportHistExcel(){
+  try {
+    const {db,collection,getDocs}=window._fb;
+    const snap=await getDocs(collection(db,'remitos'));
+    let docs=[]; snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+    docs.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+    // Aplicar filtros
+    const sucursal=document.getElementById('remHistSuc').value;
+    const fechaFrom=document.getElementById('remHistFrom').value;
+    const fechaTo=document.getElementById('remHistTo').value;
+
+    if(sucursal){docs=docs.filter(d=>d.sucursal===sucursal);}
+    if(fechaFrom){docs=docs.filter(d=>d.fecha>=fechaFrom);}
+    if(fechaTo){docs=docs.filter(d=>d.fecha<=fechaTo);}
+
+    if(!docs.length){showToast('No hay remitos con los filtros seleccionados','warn');return;}
+
+    // Crear Excel con todos los remitos
+    const wb=XLSX.utils.book_new();
+    const data=[
+      ['VIANDAS LENO – Reporte de Remitos de Venta'],
+      [''],
+      ['Filtros:'],
+      ['Sucursal:',sucursal?DB.sucursales.find(s=>s.id===sucursal)?.nombre:'Todas'],
+      ['Desde:',fechaFrom||'Inicio'],
+      ['Hasta:',fechaTo||'Hoy'],
+      ['Total de remitos:',docs.length],
+      [''],
+      ['Nro.','Fecha','Sucursal','Personal','Viandas','Cantidad Total','Monto Total ($)'],
+    ];
+
+    let totalGeneral=0;
+    docs.forEach(d=>{
+      const viandas=(d.rows||[]).map(r=>r.nombre).join('; ');
+      const cantTotal=(d.rows||[]).reduce((sum,r)=>sum+(r.qty||0),0);
+      data.push([
+        d.numero||'–',
+        d.fecha?fmtDate(d.fecha):'–',
+        d.sucNom||'–',
+        (d.personal||[]).join(', ')||'–',
+        viandas,
+        cantTotal,
+        d.total||0
+      ]);
+      totalGeneral+=d.total||0;
+    });
+
+    data.push([]);
+    data.push(['','','','','TOTAL GENERAL:','',totalGeneral]);
+
+    const ws=XLSX.utils.aoa_to_sheet(data);
+    ws['!cols']=[{wch:8},{wch:12},{wch:18},{wch:20},{wch:30},{wch:12},{wch:15}];
+    XLSX.utils.book_append_sheet(wb,ws,'Remitos');
+    XLSX.writeFile(wb,`remitos_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast('✅ Excel descargado','success');
+  } catch(err){showToast('Error: '+err.message,'error');}
 }
 
 function _remDoExcel(d){
@@ -3627,6 +3880,9 @@ window.remImprimirHist=remImprimirHist;window.remExcelHist=remExcelHist;
 window.remExportExcel=remExportExcel;window.remPrintPDF=remPrintPDF;window.remPrintTicket=remPrintTicket;window.remLimpiar=remLimpiar;
 window.renderMenuCatalogo=renderMenuCatalogo;window.editMenuCat=editMenuCat;window.saveEditMenuCat=saveEditMenuCat;
 window.addMenuCat=addMenuCat;window.delMenuCat=delMenuCat;
+window.recCargarInsumos=recCargarInsumos;window.recEditarReceta=recEditarReceta;window.recUpdatePrecio=recUpdatePrecio;
+window.recGuardarReceta=recGuardarReceta;window.recCerrarModal=recCerrarModal;
+window.recAddPlato=recAddPlato;window.recDelPlato=recDelPlato;window.recAddIng=recAddIng;window.recDelIng=recDelIng;
 window.initPedidos=initPedidos;window.pedShowTab=pedShowTab;
 window.pedGuardar=pedGuardar;window.pedLimpiar=pedLimpiar;
 window.pedChgQty=pedChgQty;window.pedQtyChange=pedQtyChange;window.pedTogSinStock=pedTogSinStock;
@@ -3645,6 +3901,190 @@ window.empToggleActivo=empToggleActivo;window.empDelete=empDelete;
 // ══════════════════════════════════════════════
 const _BD_API = 'AIzaSyBLvUviobpilTyHDXJntXblApu5ozLnns8';
 const _BD_PRJ = 'basedatosnew86';
+let _insumosCache = null;
+
+// Cargar insumos de basedatos-costos2.0
+async function recCargarInsumos() {
+  if (_insumosCache !== null) return _insumosCache;
+  try {
+    const {dbNew, collection, getDocs} = window._fb;
+    const snap = await getDocs(collection(dbNew, 'leno_insumos'));
+    _insumosCache = snap.docs.map(d => ({
+      id: d.id,
+      nombre: d.data().nombre || '',
+      precio: parseFloat(d.data().precio) || 0
+    })).sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+    console.log('✅ Insumos cargados desde basedatos-costos2.0:', _insumosCache.length);
+    return _insumosCache;
+  } catch(e) {
+    console.error('Error cargando insumos:', e);
+    return [];
+  }
+}
+
+// Mostrar modal para editar receta de un menú (insumos desde basedatos-costos2.0)
+async function recEditarReceta(nombreMenu) {
+  if (!nombreMenu) return;
+
+  const receta = DB.recetas[nombreMenu] || {};
+  const modal = document.getElementById('recModal');
+  if (!modal) {
+    console.warn('Modal recModal no existe aún');
+    return;
+  }
+
+  const insumos = await recCargarInsumos();
+
+  document.getElementById('recMenuNombre').textContent = nombreMenu;
+  document.getElementById('recMenuHidden').value = nombreMenu;
+
+  let h = '<div id="recPlatos">';
+  const platosList = receta.platos || [];
+
+  platosList.forEach((plato, idx) => {
+    h += `<div class="rec-plato-card" style="padding:12px;background:rgba(0,0,0,.03);border-radius:8px;margin-bottom:12px;border-left:3px solid var(--primary)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <input class="cfgIn rec-plato-nombre" value="${(plato.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Milanesa de carne" style="flex:1;margin:0;margin-right:8px;font-weight:600">
+        <button class="btnD" onclick="recDelPlato(${idx})" style="padding:5px 10px;font-size:.75rem">✕</button>
+      </div>
+      <div id="rec-ing-${idx}" style="margin-bottom:10px;max-height:250px;overflow-y:auto">`;
+
+    (plato.ingredientes || []).forEach((ing, ing_idx) => {
+      h += `<div class="rec-ing-row" style="display:grid;grid-template-columns:2fr 80px 60px 80px auto;gap:6px;margin-bottom:6px;align-items:center;font-size:.85rem;padding:8px;background:white;border-radius:4px">
+        <select class="cfgIn rec-insumo-sel" onchange="recUpdatePrecio(${idx},${ing_idx})" style="margin:0" data-plato="${idx}" data-ing="${ing_idx}">
+          <option value="">- Seleccionar insumo -</option>`;
+      insumos.forEach(ins => {
+        h += `<option value="${ins.id}" ${ing.insumoId === ins.id ? 'selected' : ''} data-precio="${ins.precio}">${ins.nombre}</option>`;
+      });
+      h += `</select>
+        <input type="number" class="cfgIn rec-cant" value="${ing.cantidad||1}" placeholder="Cant" style="margin:0" min="0.01" step="0.1" data-plato="${idx}" data-ing="${ing_idx}">
+        <input type="text" class="cfgIn rec-unidad" value="${(ing.unidad||'u').replace(/"/g,'&quot;')}" placeholder="u" style="margin:0" data-plato="${idx}" data-ing="${ing_idx}">
+        <input type="number" class="cfgIn rec-precio" value="${ing.precio||0}" placeholder="Precio" style="margin:0" min="0" step="0.01" data-plato="${idx}" data-ing="${ing_idx}" readonly style="background:rgba(0,0,0,.05)">
+        <button class="btnD" onclick="recDelIng(${idx},${ing_idx})" style="padding:4px 8px;font-size:.7rem;width:32px">×</button>
+      </div>`;
+    });
+
+    h += `</div><button class="btnD" onclick="recAddIng(${idx})" style="padding:6px 10px;font-size:.75rem;width:100%;margin-bottom:10px;background:rgba(0,0,0,.05)">+ Agregar insumo</button>`;
+
+    const subtotal = (plato.ingredientes || []).reduce((sum, ing) => {
+      return sum + ((ing.precio || 0) * (ing.cantidad || 1));
+    }, 0);
+
+    h += `<div style="text-align:right;padding:8px;background:rgba(176,44,36,.1);border-radius:6px;font-weight:600;font-size:.9rem;color:var(--primary)">Costo plato: $${subtotal.toFixed(2)}</div></div>`;
+  });
+
+  h += '</div>';
+  document.getElementById('recPlatosContent').innerHTML = h;
+
+  // Calcular total
+  const totalCosto = platosList.reduce((sum, plato) => {
+    return sum + ((plato.ingredientes || []).reduce((s, ing) => {
+      return s + ((ing.precio || 0) * (ing.cantidad || 1));
+    }, 0));
+  }, 0);
+
+  document.getElementById('recTotalCosto').textContent = totalCosto.toFixed(2);
+  modal.style.display = 'block';
+}
+
+// Actualizar precio cuando se selecciona insumo
+function recUpdatePrecio(platoIdx, ingIdx) {
+  const select = document.querySelector(`.rec-insumo-sel[data-plato="${platoIdx}"][data-ing="${ingIdx}"]`);
+  const precioInput = document.querySelector(`.rec-precio[data-plato="${platoIdx}"][data-ing="${ingIdx}"]`);
+  const option = select.selectedOptions[0];
+
+  if (option && option.value) {
+    const precio = parseFloat(option.dataset.precio) || 0;
+    precioInput.value = precio.toFixed(2);
+  } else {
+    precioInput.value = '0';
+  }
+}
+
+function recAddPlato() {
+  const nomMenu = document.getElementById('recMenuHidden').value;
+  if (!nomMenu) return;
+  if (!DB.recetas[nomMenu]) DB.recetas[nomMenu] = { platos: [] };
+  DB.recetas[nomMenu].platos.push({ nombre: '', ingredientes: [] });
+  recEditarReceta(nomMenu);
+}
+
+function recDelPlato(idx) {
+  const nomMenu = document.getElementById('recMenuHidden').value;
+  if (!nomMenu || !DB.recetas[nomMenu]) return;
+  DB.recetas[nomMenu].platos.splice(idx, 1);
+  recEditarReceta(nomMenu);
+}
+
+function recAddIng(idx) {
+  const nomMenu = document.getElementById('recMenuHidden').value;
+  if (!nomMenu || !DB.recetas[nomMenu]) return;
+  if (!DB.recetas[nomMenu].platos[idx]) return;
+  DB.recetas[nomMenu].platos[idx].ingredientes.push({ nombre: '', cantidad: 1, unidad: 'u', precio: 0 });
+  recEditarReceta(nomMenu);
+}
+
+function recDelIng(platoIdx, ingIdx) {
+  const nomMenu = document.getElementById('recMenuHidden').value;
+  if (!nomMenu || !DB.recetas[nomMenu]) return;
+  if (!DB.recetas[nomMenu].platos[platoIdx]) return;
+  DB.recetas[nomMenu].platos[platoIdx].ingredientes.splice(ingIdx, 1);
+  recEditarReceta(nomMenu);
+}
+
+function recGuardarReceta() {
+  const nomMenu = document.getElementById('recMenuHidden').value;
+  const modal = document.getElementById('recModal');
+  if (!nomMenu) return;
+
+  const receta = { platos: [] };
+  const platoCards = document.querySelectorAll('.rec-plato-card');
+
+  platoCards.forEach((card, platoIdx) => {
+    // Leer nombre del plato
+    const nombreInput = card.querySelector('.rec-plato-nombre');
+    const nombre = nombreInput ? nombreInput.value.trim() : '';
+    if (!nombre) return; // Saltar si no hay nombre
+
+    const ingredientes = [];
+    const ingredRows = card.querySelectorAll('.rec-ing-row');
+
+    // Leer ingredientes de este plato
+    ingredRows.forEach((row, ing_idx) => {
+      const insumoSelect = row.querySelector('.rec-insumo-sel');
+      const cantidadInput = row.querySelector('.rec-cant');
+      const unidadInput = row.querySelector('.rec-unidad');
+      const precioInput = row.querySelector('.rec-precio');
+
+      if (insumoSelect && cantidadInput && precioInput) {
+        const insumoId = insumoSelect.value.trim();
+        const cantidad = parseFloat(cantidadInput.value) || 0;
+        const unidad = unidadInput ? unidadInput.value.trim() : 'u';
+        const precio = parseFloat(precioInput.value) || 0;
+
+        if (insumoId && cantidad > 0 && precio > 0) {
+          ingredientes.push({ insumoId, cantidad, unidad, precio });
+        }
+      }
+    });
+
+    receta.platos.push({ nombre, ingredientes });
+  });
+
+  if (receta.platos.length === 0) {
+    showToast('⚠️ Agrega al menos un plato con insumo','warn');
+    return;
+  }
+
+  DB.recetas[nomMenu] = receta;
+  save();
+  showToast('✅ Receta guardada','success');
+  modal.style.display = 'none';
+}
+
+function recCerrarModal() {
+  document.getElementById('recModal').style.display = 'none';
+}
 
 // ══════════════════════════════════════════════
 //  DASHBOARD — KPI "Sin Elección"
@@ -3676,6 +4116,27 @@ function _renderDashAll() {
 }
 
 </script>
+
+<!-- Modal editar recetas -->
+<div class="emp-modal-bg" id="recModal">
+  <div class="emp-modal-box" style="max-width:700px;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0">🍳 Receta: <span id="recMenuNombre"></span></h3>
+      <button class="btnD" onclick="recCerrarModal()" style="background:none;border:none;font-size:24px;cursor:pointer">✕</button>
+    </div>
+    <input type="hidden" id="recMenuHidden">
+    <div id="recPlatosContent" style="margin-bottom:16px"></div>
+    <button class="btnA" onclick="recAddPlato()" style="width:100%;margin-bottom:12px">+ Agregar plato</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(0,0,0,.05);border-radius:6px;margin-bottom:16px;font-weight:600">
+      <span>Costo Total Menú:</span>
+      <span style="font-size:18px;color:var(--primary)">$<span id="recTotalCosto">0.00</span></span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btnD" onclick="recCerrarModal()" style="flex:1">Cancelar</button>
+      <button class="btnA" onclick="recGuardarReceta()" style="flex:1">💾 Guardar receta</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal editar empleado -->
 <div class="emp-modal-bg" id="empModal">
