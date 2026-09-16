@@ -893,6 +893,9 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
         <button class="tab" onclick="showPage('catalogo',this)">
           <span class="tab-dot"></span><span class="nav-icon">🗂️</span> Catálogo Menús
         </button>
+        <button class="tab" onclick="showPage('recetas-base',this)">
+          <span class="tab-dot"></span><span class="nav-icon">🧩</span> Recetas Base
+        </button>
         <button class="tab" onclick="showPage('pedidos',this)">
           <span class="tab-dot"></span><span class="nav-icon">🏪</span> Pedidos Insumos
         </button>
@@ -1079,6 +1082,22 @@ input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(2
             <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:16px;align-items:center">
               <input class="cfgIn" id="catNewNombre" placeholder="Nombre del nuevo menú" style="flex:1;min-width:200px;margin:0">
               <button class="btnA" onclick="addMenuCat()">+ Agregar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RECETAS BASE ── -->
+        <div id="page-recetas-base" class="page">
+          <div class="page-title"><span class="title-icon-box">🧩</span> <span class="accent">Recetas Base</span></div>
+          <div class="cfgBox" style="max-width:620px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+              <h3 style="margin:0">Componentes disponibles <span id="rbCount" style="font-size:.78rem;color:var(--muted);font-weight:400"></span></h3>
+              <input class="cfgIn" id="rbSearch" placeholder="Buscar..." style="width:180px;margin:0" oninput="renderRecetasBase()">
+            </div>
+            <div id="rbList" class="rb-list-wrap"></div>
+            <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:16px;align-items:center">
+              <input class="cfgIn" id="rbNewNombre" placeholder="Nombre del componente (Ej: Puré, Arroz)" style="flex:1;min-width:200px;margin:0">
+              <button class="btnA" onclick="rbAgregar()">+ Agregar</button>
             </div>
           </div>
         </div>
@@ -1470,7 +1489,8 @@ let DB = {
   registros:  {},
   asistencia: {},
   creds:      {user:'admin', pass:'leno2799'},
-  recetas:    {}  // {nombreMenu: {plato1: [{insumo, cantidad, unidad, precio}], plato2: [...]}}
+  recetas:    {},  // {nombreMenu: {platos: [{nombre, ingredientes: [{insumoId, cantidad, unidad, precio}]}]}}
+  recetasBase: {}  // {nombreComponente: {ingredientes: [{insumoId, cantidad, unidad, precio}], costoTotal: 0}}
 };
 
 let fb, saveTimer = null;
@@ -1501,6 +1521,7 @@ async function fbLoad() {
       DB.asistencia = remote.asistencia && Object.keys(remote.asistencia).length ? remote.asistencia : {};
       DB.creds      = remote.creds ? remote.creds : {user:'admin', pass:'leno2799'};
       DB.recetas    = remote.recetas && typeof remote.recetas === 'object' ? remote.recetas : {};
+      DB.recetasBase = remote.recetasBase && typeof remote.recetasBase === 'object' ? remote.recetasBase : {};
       // Si empleados era vacío y acabamos de usar D_EMP, guardar
       if (!empsFromRemote && DB.empleados.length > 0) {
         await fbSaveNow();
@@ -1543,6 +1564,7 @@ function fbSetupRealtimeListener() {
         DB.registros  = remote.registros || DB.registros;
         DB.asistencia = remote.asistencia || DB.asistencia;
         DB.recetas    = (typeof remote.recetas === 'object' && remote.recetas) ? remote.recetas : DB.recetas;
+        DB.recetasBase = (typeof remote.recetasBase === 'object' && remote.recetasBase) ? remote.recetasBase : DB.recetasBase;
 
         if (Object.keys(cambiosDetectados).length > 0) {
           console.log('🔁 Cambios detectados en tiempo real:', cambiosDetectados);
@@ -1585,7 +1607,8 @@ async function fbSaveNow() {
       registros:  DB.registros,
       asistencia: DB.asistencia,
       creds:      DB.creds,
-      recetas:    DB.recetas
+      recetas:    DB.recetas,
+      recetasBase: DB.recetasBase
     }, {merge: true});
     console.log('✅ Guardado en Firebase');
     setSyncBadge('ok');
@@ -3883,6 +3906,8 @@ window.addMenuCat=addMenuCat;window.delMenuCat=delMenuCat;
 window.recCargarInsumos=recCargarInsumos;window.recEditarReceta=recEditarReceta;window.recUpdatePrecio=recUpdatePrecio;
 window.recGuardarReceta=recGuardarReceta;window.recCerrarModal=recCerrarModal;
 window.recAddPlato=recAddPlato;window.recDelPlato=recDelPlato;window.recAddIng=recAddIng;window.recDelIng=recDelIng;
+window.renderRecetasBase=renderRecetasBase;window.rbAgregar=rbAgregar;window.rbEditar=rbEditar;
+window.rbGuardar=rbGuardar;window.rbEliminar=rbEliminar;window.rbCerrarModal=rbCerrarModal;window.rbAddIng=rbAddIng;window.rbDelIng=rbDelIng;
 window.initPedidos=initPedidos;window.pedShowTab=pedShowTab;
 window.pedGuardar=pedGuardar;window.pedLimpiar=pedLimpiar;
 window.pedChgQty=pedChgQty;window.pedQtyChange=pedQtyChange;window.pedTogSinStock=pedTogSinStock;
@@ -4094,6 +4119,181 @@ function recGuardarReceta() {
 
 function recCerrarModal() {
   document.getElementById('recModal').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+//  RECETAS BASE — Componentes reutilizables
+// ══════════════════════════════════════════════
+function renderRecetasBase() {
+  const query = (document.getElementById('rbSearch')?.value || '').toLowerCase();
+  const list = Object.entries(DB.recetasBase)
+    .filter(([nombre]) => nombre.toLowerCase().includes(query))
+    .sort((a, b) => a[0].localeCompare(b[0]));
+
+  const html = list.map(([nombre, data]) => {
+    const costoTotal = data.costoTotal || 0;
+    return `<button class="btnD cat-btn" onclick="rbEditar('${nombre}')" style="background:linear-gradient(135deg, #E8BD4F 0%, #D4A832 100%);border:none">
+      <div style="text-align:left">
+        <strong>${nombre}</strong>
+        <span style="display:block;font-size:.75rem;opacity:.8">$${costoTotal.toFixed(2)}</span>
+      </div>
+    </button>`;
+  }).join('');
+
+  document.getElementById('rbList').innerHTML = html || '<p style="color:var(--muted);padding:20px">Sin componentes aún</p>';
+  document.getElementById('rbCount').textContent = `(${list.length})`;
+}
+
+function rbAgregar() {
+  const nombre = (document.getElementById('rbNewNombre')?.value || '').trim();
+  if (!nombre) {
+    showToast('⚠️ Ingresa nombre del componente','warn');
+    return;
+  }
+  if (DB.recetasBase[nombre]) {
+    showToast('⚠️ Este componente ya existe','warn');
+    return;
+  }
+  DB.recetasBase[nombre] = { ingredientes: [], costoTotal: 0 };
+  document.getElementById('rbNewNombre').value = '';
+  rbEditar(nombre);
+}
+
+async function rbEditar(nombre) {
+  if (!nombre || !DB.recetasBase[nombre]) return;
+
+  const insumos = await recCargarInsumos();
+  const data = DB.recetasBase[nombre];
+  const modal = document.getElementById('rbModal') || crear_rbModal();
+
+  document.getElementById('rbModalTitle').textContent = nombre;
+  document.getElementById('rbModalNombre').value = nombre;
+
+  let h = '<div id="rbIngList">';
+  (data.ingredientes || []).forEach((ing, idx) => {
+    const insumo = insumos.find(i => i.id === ing.insumoId);
+    h += `<div class="rb-ing-row" style="display:grid;grid-template-columns:2fr 80px 60px 80px auto;gap:6px;margin-bottom:6px;align-items:center;font-size:.85rem;padding:8px;background:white;border-radius:4px">
+      <select class="cfgIn rb-insumo-sel" onchange="rbUpdatePrecio(${idx})" style="margin:0;padding:8px 6px;font-size:.9rem;min-height:36px" data-idx="${idx}">
+        <option value="">- Seleccionar insumo -</option>`;
+    insumos.forEach(ins => {
+      h += `<option value="${ins.id}" ${ing.insumoId === ins.id ? 'selected' : ''} data-precio="${ins.precio}">${ins.nombre}</option>`;
+    });
+    h += `</select>
+      <input type="number" class="cfgIn rb-cant" value="${ing.cantidad||1}" placeholder="Cant" style="margin:0" min="0.01" step="0.1" data-idx="${idx}">
+      <input type="text" class="cfgIn rb-unidad" value="${(ing.unidad||'u')}" placeholder="u" style="margin:0" data-idx="${idx}">
+      <input type="number" class="cfgIn rb-precio" value="${ing.precio||0}" placeholder="Precio" style="margin:0" min="0" step="0.01" readonly style="background:rgba(0,0,0,.05)" data-idx="${idx}">
+      <button class="btnD" onclick="rbDelIng(${idx})" style="padding:4px 8px;font-size:.7rem;width:32px">×</button>
+    </div>`;
+  });
+  h += '</div>';
+  document.getElementById('rbIngContent').innerHTML = h;
+
+  const costoTotal = (data.ingredientes || []).reduce((sum, ing) => sum + ((ing.precio || 0) * (ing.cantidad || 1)), 0);
+  document.getElementById('rbTotalCosto').textContent = costoTotal.toFixed(2);
+
+  modal.style.display = 'block';
+}
+
+function rbUpdatePrecio(idx) {
+  const select = document.querySelector(`.rb-insumo-sel[data-idx="${idx}"]`);
+  const precioInput = document.querySelector(`.rb-precio[data-idx="${idx}"]`);
+  const option = select.selectedOptions[0];
+  if (option && option.value) {
+    const precio = parseFloat(option.dataset.precio) || 0;
+    precioInput.value = precio.toFixed(2);
+  } else {
+    precioInput.value = '0';
+  }
+}
+
+function rbAddIng() {
+  const nombre = document.getElementById('rbModalNombre').value;
+  if (!nombre || !DB.recetasBase[nombre]) return;
+  DB.recetasBase[nombre].ingredientes.push({ insumoId: '', cantidad: 1, unidad: 'u', precio: 0 });
+  rbEditar(nombre);
+}
+
+function rbDelIng(idx) {
+  const nombre = document.getElementById('rbModalNombre').value;
+  if (!nombre || !DB.recetasBase[nombre]) return;
+  DB.recetasBase[nombre].ingredientes.splice(idx, 1);
+  rbEditar(nombre);
+}
+
+function rbGuardar() {
+  const nombre = document.getElementById('rbModalNombre').value;
+  if (!nombre || !DB.recetasBase[nombre]) return;
+
+  const ingredientes = [];
+  const ingRows = document.querySelectorAll('.rb-ing-row');
+
+  ingRows.forEach(row => {
+    const select = row.querySelector('.rb-insumo-sel');
+    const cantInput = row.querySelector('.rb-cant');
+    const unidadInput = row.querySelector('.rb-unidad');
+    const precioInput = row.querySelector('.rb-precio');
+
+    const insumoId = select.value.trim();
+    const cantidad = parseFloat(cantInput.value) || 0;
+    const unidad = unidadInput.value.trim() || 'u';
+    const precio = parseFloat(precioInput.value) || 0;
+
+    if (insumoId && cantidad > 0 && precio > 0) {
+      ingredientes.push({ insumoId, cantidad, unidad, precio });
+    }
+  });
+
+  if (ingredientes.length === 0) {
+    showToast('⚠️ Agrega al menos un insumo','warn');
+    return;
+  }
+
+  const costoTotal = ingredientes.reduce((sum, ing) => sum + ((ing.precio || 0) * (ing.cantidad || 1)), 0);
+  DB.recetasBase[nombre] = { ingredientes, costoTotal };
+
+  save();
+  showToast('✅ Componente guardado','success');
+  rbCerrarModal();
+  renderRecetasBase();
+}
+
+function rbEliminar(nombre) {
+  if (!confirm(`¿Eliminar "${nombre}"?`)) return;
+  delete DB.recetasBase[nombre];
+  save();
+  showToast('🗑️ Componente eliminado','success');
+  renderRecetasBase();
+}
+
+function rbCerrarModal() {
+  const modal = document.getElementById('rbModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function crear_rbModal() {
+  const html = `<div id="rbModal" class="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow-y:auto">
+    <div class="modal-content" style="width:90%;max-width:700px;margin:40px auto;background:white;border-radius:12px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,.15)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 id="rbModalTitle" style="margin:0;color:var(--text)"></h2>
+        <button onclick="rbCerrarModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted)">✕</button>
+      </div>
+
+      <div id="rbIngContent"></div>
+
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);text-align:right">
+        <strong>Costo total: $<span id="rbTotalCosto">0.00</span></strong>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:20px">
+        <button class="btnA" onclick="rbAddIng()" style="flex:1">+ Agregar insumo</button>
+        <button class="btnD" onclick="rbGuardar()" style="flex:1;background:var(--primary);color:white">Guardar</button>
+      </div>
+      <input type="hidden" id="rbModalNombre">
+    </div>
+  </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+  return document.getElementById('rbModal');
 }
 
 // ══════════════════════════════════════════════
