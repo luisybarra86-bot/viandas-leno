@@ -3928,6 +3928,29 @@ const _BD_API = 'AIzaSyBLvUviobpilTyHDXJntXblApu5ozLnns8';
 const _BD_PRJ = 'basedatosnew86';
 let _insumosCache = null;
 
+// Parsear nombre para extraer tamaño y cantidad de unidades
+function parseInsumoNombre(nombre) {
+  // Busca patrones como "x300gr" y "paq x12und"
+  const tamanioMatch = nombre.match(/x(\d+(?:\.\d+)?)(gr|kg|ml|l|und)?/gi);
+  const unidadesMatch = nombre.match(/paq\s*x(\d+)und/i);
+
+  let tamanio = null, unidad = null, cantidadPorPaquete = null;
+
+  if (unidadesMatch) {
+    cantidadPorPaquete = parseInt(unidadesMatch[1]);
+  }
+
+  if (tamanioMatch) {
+    const primerMatch = tamanioMatch[0].match(/x(\d+(?:\.\d+)?)(gr|kg|ml|l)?/i);
+    if (primerMatch) {
+      tamanio = parseFloat(primerMatch[1]);
+      unidad = primerMatch[2] || 'und';
+    }
+  }
+
+  return { tamanio, unidad, cantidadPorPaquete };
+}
+
 // Cargar insumos de basedatos-costos2.0 con precio actual del mes
 async function recCargarInsumos() {
   if (_insumosCache !== null) return _insumosCache;
@@ -3943,10 +3966,15 @@ async function recCargarInsumos() {
       const data = d.data();
       const precioMes = parseFloat(data.precios?.[mesActual]) || 0;
       const precioFinal = precioMes > 0 ? precioMes : parseFloat(data.precioAnterior) || 0;
+      const presentacion = parseInsumoNombre(data.nombre || '');
+
       return {
         id: d.id,
         nombre: data.nombre || '',
-        precio: precioFinal
+        precio: precioFinal,
+        tamanio: presentacion.tamanio,
+        unidad: presentacion.unidad,
+        cantidadPorPaquete: presentacion.cantidadPorPaquete
       };
     }).filter(i => i.nombre && i.precio > 0).sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
     console.log(`✅ Insumos cargados (${mesActual}):`, _insumosCache.length);
@@ -4001,15 +4029,17 @@ async function recEditarReceta(nombreMenu) {
         </div>`;
       } else {
         // Renderizar insumo
+        const insumoSelec = insumos.find(i => i.id === ing.insumoId);
+        const displayUnidad = insumoSelec?.unidad || ing.unidad || 'u';
         h += `<div class="rec-ing-row" style="display:grid;grid-template-columns:2fr 80px 60px 80px auto;gap:6px;margin-bottom:6px;align-items:center;font-size:.85rem;padding:8px;background:white;border-radius:4px">
           <select class="cfgIn rec-insumo-sel" onchange="recUpdatePrecio(${idx},${ing_idx})" style="margin:0;padding:8px 6px;font-size:.9rem;min-height:36px" data-plato="${idx}" data-ing="${ing_idx}">
             <option value="">- Seleccionar insumo -</option>`;
         insumos.forEach(ins => {
-          h += `<option value="${ins.id}" ${ing.insumoId === ins.id ? 'selected' : ''} data-precio="${ins.precio}">${ins.nombre}</option>`;
+          h += `<option value="${ins.id}" ${ing.insumoId === ins.id ? 'selected' : ''} data-precio="${ins.precio}" data-tamanio="${ins.tamanio}" data-cantidad-paq="${ins.cantidadPorPaquete}" data-unidad="${ins.unidad}">${ins.nombre}</option>`;
         });
         h += `</select>
           <input type="number" class="cfgIn rec-cant" value="${ing.cantidad||1}" placeholder="Cant" style="margin:0" min="0.01" step="0.1" data-plato="${idx}" data-ing="${ing_idx}">
-          <input type="text" class="cfgIn rec-unidad" value="${(ing.unidad||'u').replace(/"/g,'&quot;')}" placeholder="u" style="margin:0" data-plato="${idx}" data-ing="${ing_idx}">
+          <input type="text" class="cfgIn rec-unidad" value="${displayUnidad}" placeholder="u" style="margin:0;background:rgba(0,0,0,.05)" readonly data-plato="${idx}" data-ing="${ing_idx}">
           <input type="number" class="cfgIn rec-precio" value="${ing.precio||0}" placeholder="Precio" style="margin:0" min="0" step="0.01" data-plato="${idx}" data-ing="${ing_idx}" readonly style="background:rgba(0,0,0,.05)">
           <button class="btnD" onclick="recDelIng(${idx},${ing_idx})" style="padding:4px 8px;font-size:.7rem;width:32px">×</button>
         </div>`;
@@ -4045,14 +4075,38 @@ async function recEditarReceta(nombreMenu) {
 // Actualizar precio cuando se selecciona insumo
 function recUpdatePrecio(platoIdx, ingIdx) {
   const select = document.querySelector(`.rec-insumo-sel[data-plato="${platoIdx}"][data-ing="${ingIdx}"]`);
+  const cantInput = document.querySelector(`.rec-cant[data-plato="${platoIdx}"][data-ing="${ingIdx}"]`);
+  const unidadInput = document.querySelector(`.rec-unidad[data-plato="${platoIdx}"][data-ing="${ingIdx}"]`);
   const precioInput = document.querySelector(`.rec-precio[data-plato="${platoIdx}"][data-ing="${ingIdx}"]`);
   const option = select.selectedOptions[0];
 
   if (option && option.value) {
-    const precio = parseFloat(option.dataset.precio) || 0;
-    precioInput.value = precio.toFixed(2);
+    const precioPaquete = parseFloat(option.dataset.precio) || 0;
+    const cantidadPorPaquete = parseFloat(option.dataset['cantidad-paq']) || 1;
+    const tamanio = parseFloat(option.dataset.tamanio);
+    const cantidad = parseFloat(cantInput.value) || 1;
+    const unidad = option.dataset.unidad || 'u';
+
+    // Actualizar unidad mostrada
+    if (unidadInput) unidadInput.value = unidad;
+
+    // Calcular precio
+    let precioFinal = 0;
+    if (cantidadPorPaquete && cantidadPorPaquete > 1) {
+      // Tiene unidades específicas (ej: 12 tartitas)
+      precioFinal = (cantidad / cantidadPorPaquete) * precioPaquete;
+    } else if (tamanio && tamanio > 0) {
+      // Tiene tamaño (ej: 300gr)
+      precioFinal = (cantidad / tamanio) * precioPaquete;
+    } else {
+      // Sin información, usar precio directo
+      precioFinal = cantidad * precioPaquete;
+    }
+
+    precioInput.value = precioFinal.toFixed(2);
   } else {
     precioInput.value = '0';
+    if (unidadInput) unidadInput.value = 'u';
   }
 }
 
