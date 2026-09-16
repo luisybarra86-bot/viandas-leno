@@ -3903,7 +3903,7 @@ window.remImprimirHist=remImprimirHist;window.remExcelHist=remExcelHist;
 window.remExportExcel=remExportExcel;window.remPrintPDF=remPrintPDF;window.remPrintTicket=remPrintTicket;window.remLimpiar=remLimpiar;
 window.renderMenuCatalogo=renderMenuCatalogo;window.editMenuCat=editMenuCat;window.saveEditMenuCat=saveEditMenuCat;
 window.addMenuCat=addMenuCat;window.delMenuCat=delMenuCat;
-window.recCargarInsumos=recCargarInsumos;window.recEditarReceta=recEditarReceta;window.recUpdatePrecio=recUpdatePrecio;
+window.recCargarInsumos=recCargarInsumos;window.recEditarReceta=recEditarReceta;window.recUpdatePrecio=recUpdatePrecio;window.recUpdateComponentePrecio=recUpdateComponentePrecio;
 window.recGuardarReceta=recGuardarReceta;window.recCerrarModal=recCerrarModal;
 window.recAddPlato=recAddPlato;window.recDelPlato=recDelPlato;window.recAddIng=recAddIng;window.recDelIng=recDelIng;
 window.renderRecetasBase=renderRecetasBase;window.rbAgregar=rbAgregar;window.rbEditar=rbEditar;
@@ -3985,21 +3985,41 @@ async function recEditarReceta(nombreMenu) {
       <div id="rec-ing-${idx}" style="margin-bottom:10px;max-height:250px;overflow-y:auto">`;
 
     (plato.ingredientes || []).forEach((ing, ing_idx) => {
-      h += `<div class="rec-ing-row" style="display:grid;grid-template-columns:2fr 80px 60px 80px auto;gap:6px;margin-bottom:6px;align-items:center;font-size:.85rem;padding:8px;background:white;border-radius:4px">
-        <select class="cfgIn rec-insumo-sel" onchange="recUpdatePrecio(${idx},${ing_idx})" style="margin:0;padding:8px 6px;font-size:.9rem;min-height:36px" data-plato="${idx}" data-ing="${ing_idx}">
-          <option value="">- Seleccionar insumo -</option>`;
-      insumos.forEach(ins => {
-        h += `<option value="${ins.id}" ${ing.insumoId === ins.id ? 'selected' : ''} data-precio="${ins.precio}">${ins.nombre}</option>`;
-      });
-      h += `</select>
-        <input type="number" class="cfgIn rec-cant" value="${ing.cantidad||1}" placeholder="Cant" style="margin:0" min="0.01" step="0.1" data-plato="${idx}" data-ing="${ing_idx}">
-        <input type="text" class="cfgIn rec-unidad" value="${(ing.unidad||'u').replace(/"/g,'&quot;')}" placeholder="u" style="margin:0" data-plato="${idx}" data-ing="${ing_idx}">
-        <input type="number" class="cfgIn rec-precio" value="${ing.precio||0}" placeholder="Precio" style="margin:0" min="0" step="0.01" data-plato="${idx}" data-ing="${ing_idx}" readonly style="background:rgba(0,0,0,.05)">
-        <button class="btnD" onclick="recDelIng(${idx},${ing_idx})" style="padding:4px 8px;font-size:.7rem;width:32px">×</button>
-      </div>`;
+      if (ing.tipo === 'componente') {
+        // Renderizar componente
+        h += `<div class="rec-ing-row" style="display:grid;grid-template-columns:2fr 80px 60px 80px auto;gap:6px;margin-bottom:6px;align-items:center;font-size:.85rem;padding:8px;background:rgba(232,189,79,.1);border-radius:4px;border-left:3px solid #E8BD4F">
+          <select class="cfgIn rec-comp-sel" onchange="recUpdateComponentePrecio(${idx},${ing_idx})" style="margin:0;padding:8px 6px;font-size:.9rem;min-height:36px" data-plato="${idx}" data-ing="${ing_idx}">
+            <option value="">- Seleccionar componente -</option>`;
+        Object.entries(DB.recetasBase).forEach(([nombre, data]) => {
+          h += `<option value="${nombre}" ${ing.componenteNombre === nombre ? 'selected' : ''} data-precio="${data.costoTotal}">${nombre} ($${data.costoTotal.toFixed(2)})</option>`;
+        });
+        h += `</select>
+          <input type="number" class="cfgIn rec-comp-cant" value="${ing.cantidad||1}" placeholder="Cant" style="margin:0" min="0.01" step="0.1" data-plato="${idx}" data-ing="${ing_idx}">
+          <input type="text" readonly value="porción" placeholder="u" style="margin:0;background:rgba(0,0,0,.05);font-size:.85rem" data-plato="${idx}" data-ing="${ing_idx}">
+          <input type="number" class="cfgIn rec-comp-precio" value="${ing.precioUnitario||0}" placeholder="Precio" style="margin:0" min="0" step="0.01" readonly style="background:rgba(0,0,0,.05)" data-plato="${idx}" data-ing="${ing_idx}">
+          <button class="btnD" onclick="recDelIng(${idx},${ing_idx})" style="padding:4px 8px;font-size:.7rem;width:32px">×</button>
+        </div>`;
+      } else {
+        // Renderizar insumo
+        h += `<div class="rec-ing-row" style="display:grid;grid-template-columns:2fr 80px 60px 80px auto;gap:6px;margin-bottom:6px;align-items:center;font-size:.85rem;padding:8px;background:white;border-radius:4px">
+          <select class="cfgIn rec-insumo-sel" onchange="recUpdatePrecio(${idx},${ing_idx})" style="margin:0;padding:8px 6px;font-size:.9rem;min-height:36px" data-plato="${idx}" data-ing="${ing_idx}">
+            <option value="">- Seleccionar insumo -</option>`;
+        insumos.forEach(ins => {
+          h += `<option value="${ins.id}" ${ing.insumoId === ins.id ? 'selected' : ''} data-precio="${ins.precio}">${ins.nombre}</option>`;
+        });
+        h += `</select>
+          <input type="number" class="cfgIn rec-cant" value="${ing.cantidad||1}" placeholder="Cant" style="margin:0" min="0.01" step="0.1" data-plato="${idx}" data-ing="${ing_idx}">
+          <input type="text" class="cfgIn rec-unidad" value="${(ing.unidad||'u').replace(/"/g,'&quot;')}" placeholder="u" style="margin:0" data-plato="${idx}" data-ing="${ing_idx}">
+          <input type="number" class="cfgIn rec-precio" value="${ing.precio||0}" placeholder="Precio" style="margin:0" min="0" step="0.01" data-plato="${idx}" data-ing="${ing_idx}" readonly style="background:rgba(0,0,0,.05)">
+          <button class="btnD" onclick="recDelIng(${idx},${ing_idx})" style="padding:4px 8px;font-size:.7rem;width:32px">×</button>
+        </div>`;
+      }
     });
 
-    h += `</div><button class="btnD" onclick="recAddIng(${idx})" style="padding:6px 10px;font-size:.75rem;width:100%;margin-bottom:10px;background:rgba(0,0,0,.05)">+ Agregar insumo</button>`;
+    h += `</div><div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="btnD" onclick="recAddIng(${idx})" style="padding:6px 10px;font-size:.75rem;flex:1;background:rgba(0,0,0,.05)">+ Insumo</button>
+      <button class="btnD" onclick="recAddComponente(${idx})" style="padding:6px 10px;font-size:.75rem;flex:1;background:rgba(0,0,0,.05)">+ Componente</button>
+    </div>`;
 
     const subtotal = (plato.ingredientes || []).reduce((sum, ing) => {
       return sum + ((ing.precio || 0) * (ing.cantidad || 1));
@@ -4036,6 +4056,19 @@ function recUpdatePrecio(platoIdx, ingIdx) {
   }
 }
 
+function recUpdateComponentePrecio(platoIdx, ingIdx) {
+  const select = document.querySelector(`.rec-comp-sel[data-plato="${platoIdx}"][data-ing="${ingIdx}"]`);
+  const precioInput = document.querySelector(`.rec-comp-precio[data-plato="${platoIdx}"][data-ing="${ingIdx}"]`);
+  const option = select.selectedOptions[0];
+
+  if (option && option.value) {
+    const precio = parseFloat(option.dataset.precio) || 0;
+    precioInput.value = precio.toFixed(2);
+  } else {
+    precioInput.value = '0';
+  }
+}
+
 function recAddPlato() {
   const nomMenu = document.getElementById('recMenuHidden').value;
   if (!nomMenu) return;
@@ -4055,7 +4088,15 @@ function recAddIng(idx) {
   const nomMenu = document.getElementById('recMenuHidden').value;
   if (!nomMenu || !DB.recetas[nomMenu]) return;
   if (!DB.recetas[nomMenu].platos[idx]) return;
-  DB.recetas[nomMenu].platos[idx].ingredientes.push({ nombre: '', cantidad: 1, unidad: 'u', precio: 0 });
+  DB.recetas[nomMenu].platos[idx].ingredientes.push({ tipo: 'insumo', insumoId: '', cantidad: 1, unidad: 'u', precio: 0 });
+  recEditarReceta(nomMenu);
+}
+
+function recAddComponente(idx) {
+  const nomMenu = document.getElementById('recMenuHidden').value;
+  if (!nomMenu || !DB.recetas[nomMenu]) return;
+  if (!DB.recetas[nomMenu].platos[idx]) return;
+  DB.recetas[nomMenu].platos[idx].ingredientes.push({ tipo: 'componente', componenteNombre: '', cantidad: 1, precioUnitario: 0 });
   recEditarReceta(nomMenu);
 }
 
@@ -4087,18 +4128,32 @@ function recGuardarReceta() {
     // Leer ingredientes de este plato
     ingredRows.forEach((row, ing_idx) => {
       const insumoSelect = row.querySelector('.rec-insumo-sel');
-      const cantidadInput = row.querySelector('.rec-cant');
-      const unidadInput = row.querySelector('.rec-unidad');
-      const precioInput = row.querySelector('.rec-precio');
+      const componenteSelect = row.querySelector('.rec-comp-sel');
+      const cantidadInput = row.querySelector('.rec-cant') || row.querySelector('.rec-comp-cant');
 
-      if (insumoSelect && cantidadInput && precioInput) {
+      if (insumoSelect && cantidadInput) {
+        // Es un insumo
+        const precioInput = row.querySelector('.rec-precio');
+        const unidadInput = row.querySelector('.rec-unidad');
+
         const insumoId = insumoSelect.value.trim();
         const cantidad = parseFloat(cantidadInput.value) || 0;
         const unidad = unidadInput ? unidadInput.value.trim() : 'u';
         const precio = parseFloat(precioInput.value) || 0;
 
         if (insumoId && cantidad > 0 && precio > 0) {
-          ingredientes.push({ insumoId, cantidad, unidad, precio });
+          ingredientes.push({ tipo: 'insumo', insumoId, cantidad, unidad, precio });
+        }
+      } else if (componenteSelect && cantidadInput) {
+        // Es un componente
+        const precioInput = row.querySelector('.rec-comp-precio');
+
+        const componenteNombre = componenteSelect.value.trim();
+        const cantidad = parseFloat(cantidadInput.value) || 0;
+        const precioUnitario = parseFloat(precioInput.value) || 0;
+
+        if (componenteNombre && cantidad > 0 && precioUnitario > 0) {
+          ingredientes.push({ tipo: 'componente', componenteNombre, cantidad, precioUnitario });
         }
       }
     });
