@@ -2133,12 +2133,12 @@ async function empAdd() {
 }
 
 async function empToggleActivo(id) {
-  const emp = _emps.find(e => e.id === id);
+  const emp = DB.empleados.find(e => e.id === id);
   if (!emp) return;
   emp.activo = !emp.activo;
   const { db, doc, setDoc } = window._fb;
   try {
-    await setDoc(doc(db, 'empleados', id), emp);
+    await setDoc(doc(db, 'empleados', id), emp, {merge: true});
     empRender();
     showToast(emp.activo ? '✅ Empleado activado' : '⏸ Empleado pausado', 'success');
   } catch(e) { emp.activo = !emp.activo; showToast('Error: ' + e.message, 'error'); }
