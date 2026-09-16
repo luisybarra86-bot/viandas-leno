@@ -3903,21 +3903,28 @@ const _BD_API = 'AIzaSyBLvUviobpilTyHDXJntXblApu5ozLnns8';
 const _BD_PRJ = 'basedatosnew86';
 let _insumosCache = null;
 
-// Cargar insumos de basedatos-costos2.0
+// Cargar insumos de basedatos-costos2.0 con precio actual del mes
 async function recCargarInsumos() {
   if (_insumosCache !== null) return _insumosCache;
   try {
+    const hoy = new Date();
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const mesActual = meses[hoy.getMonth()];
+
     const {dbNew, collection, getDocs} = window._fb;
     const snap = await getDocs(collection(dbNew, 'leno_insumos'));
     _insumosCache = snap.docs.map(d => {
       const data = d.data();
+      const precioMes = parseFloat(data.precios?.[mesActual]) || 0;
+      const precioFinal = precioMes > 0 ? precioMes : parseFloat(data.precioAnterior) || 0;
       return {
         id: d.id,
         nombre: data.nombre || '',
-        precio: parseFloat(data.precioAnterior) || 0
+        precio: precioFinal
       };
     }).filter(i => i.nombre && i.precio > 0).sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
-    console.log('✅ Insumos cargados:', _insumosCache.length);
+    console.log(`✅ Insumos cargados (${mesActual}):`, _insumosCache.length);
     return _insumosCache;
   } catch(e) {
     console.error('Error cargando insumos:', e);
